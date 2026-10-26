@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+      - PUBLIC_URL=${PUBLIC_URL:-http://localhost:3000}
+      - OWNER_EMAIL=${OWNER_EMAIL:-owner@fundamentzz.local}
+      - OWNER_PASSWORD=${OWNER_PASSWORD:-}
+    volumes:
+      - digital_menu_data:/data
+    restart: unless-stopped
+
+volumes:
+  digital_menu_data:
