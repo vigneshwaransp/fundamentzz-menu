@@ -1,32 +1,50 @@
 :root {
-  /* Palette */
-  --color-bg: #0e2a1c;          /* Banana-leaf deep green */
-  --color-card: #133424;        /* Banana-leaf card surface */
-  --color-card-hover: #19432f;  /* Card surface hover */
-  --color-card-border: rgba(244, 239, 226, 0.1);
-  --color-text: #f4efe2;        /* Rice-flour ivory */
-  --color-text-muted: #c8c2b5;  /* Soft ivory */
-  --color-accent: #e8b13a;      /* Turmeric single accent */
-  --color-accent-hover: #f3be4d;/* Turmeric brighter hover */
-  --color-accent-bg: rgba(232, 177, 58, 0.15);
-  --color-destructive: #e0614b; /* Chilli for sold-out and destructive actions */
-  --color-destructive-bg: rgba(224, 97, 75, 0.15);
+  /* Premium Light Glassmorphism Palette */
+  --color-bg: #f8fafc;
+  --color-card: rgba(255, 255, 255, 0.72);
+  --color-card-hover: rgba(255, 255, 255, 0.9);
+  --color-card-solid: #ffffff;
+  --color-card-border: rgba(255, 255, 255, 0.85);
+  --color-card-border-subtle: rgba(15, 23, 42, 0.08);
 
   /* Typography */
-  --font-heading: 'Fraunces Variable', 'Noto Serif Tamil', serif;
-  --font-body: 'Hind Madurai', sans-serif;
-  --font-price: 'Hind Madurai', sans-serif;
+  --color-text: #0f172a;               /* Deep obsidian slate */
+  --color-text-muted: #64748b;         /* Refined slate */
+  --color-text-subtle: #94a3b8;        /* Light placeholder slate */
+
+  /* Accents */
+  --color-accent: #059669;             /* Jewel emerald */
+  --color-accent-hover: #047857;
+  --color-accent-bg: rgba(5, 150, 105, 0.08);
+  --color-accent-gold: #d97706;        /* Warm gold accent */
+  --color-accent-gold-bg: rgba(217, 119, 6, 0.1);
+
+  /* Status & Destructive */
+  --color-destructive: #e11d48;        /* Crimson chilli */
+  --color-destructive-hover: #be123c;
+  --color-destructive-bg: rgba(225, 29, 72, 0.08);
+  --color-success: #059669;
+
+  /* Typography Fonts */
+  --font-heading: 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif;
+  --font-body: 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-price: 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Spacing & Radii */
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.25);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+  /* Glass Shadows & Reflections */
+  --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02);
+  --shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+  --shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  --shadow-glass: 0 8px 32px 0 rgba(15, 23, 42, 0.05), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  --shadow-glass-hover: 0 16px 48px -8px rgba(15, 23, 42, 0.09), inset 0 1px 1px 0 #ffffff;
+  --shadow-modal: 0 25px 60px -15px rgba(15, 23, 42, 0.18), 0 0 1px 1px rgba(255, 255, 255, 0.8);
 }
 
 /* Strict requirement: [hidden] must have display: none !important */
@@ -50,9 +68,15 @@ html {
 body {
   font-family: var(--font-body);
   background-color: var(--color-bg);
-  /* Faint kolam dot-grid motif */
-  background-image: radial-gradient(rgba(244, 239, 226, 0.08) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
+  /* Luminous multi-layered ambient light mesh */
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(16, 185, 129, 0.1) 0px, transparent 40%),
+    radial-gradient(at 85% 10%, rgba(245, 158, 11, 0.09) 0px, transparent 42%),
+    radial-gradient(at 50% 85%, rgba(14, 165, 233, 0.08) 0px, transparent 48%),
+    radial-gradient(at 80% 85%, rgba(16, 185, 129, 0.06) 0px, transparent 45%),
+    radial-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 28px 28px;
+  background-attachment: fixed;
   color: var(--color-text);
   line-height: 1.5;
   min-height: 100vh;
@@ -69,7 +93,7 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   color: var(--color-text);
   line-height: 1.25;
-  text-transform: none; /* Sentence case, avoid tracked all-caps */
+  text-transform: none;
   letter-spacing: normal;
 }
 
@@ -80,6 +104,15 @@ p, span, label, input, button, select, textarea {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+/* Glass Surface Utility */
+.glass-panel {
+  background: var(--color-card);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--color-card-border);
+  box-shadow: var(--shadow-glass);
 }
 
 /* Base Buttons */
@@ -94,7 +127,7 @@ a {
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
 }
 
@@ -103,39 +136,51 @@ a {
 }
 
 .btn-primary {
-  background-color: var(--color-accent);
-  color: #0e2a1c; /* Contrast with turmeric */
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  color: #ffffff;
   font-weight: 600;
+  border: 1px solid rgba(5, 150, 105, 0.3);
+  box-shadow: 0 4px 14px 0 rgba(5, 150, 105, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .btn-primary:hover {
-  background-color: var(--color-accent-hover);
+  background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+  box-shadow: 0 6px 20px 0 rgba(5, 150, 105, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background-color: var(--color-card);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   color: var(--color-text);
-  border-color: var(--color-card-border);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .btn-secondary:hover {
-  background-color: var(--color-card-hover);
-  border-color: rgba(244, 239, 226, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(15, 23, 42, 0.18);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transform: translateY(-1px);
 }
 
 .btn-destructive {
-  background-color: var(--color-destructive-bg);
+  background: var(--color-destructive-bg);
   color: var(--color-destructive);
-  border-color: rgba(224, 97, 75, 0.3);
+  border: 1px solid rgba(225, 29, 72, 0.2);
 }
 
 .btn-destructive:hover {
-  background-color: var(--color-destructive);
+  background: var(--color-destructive);
   color: #ffffff;
+  border-color: var(--color-destructive);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
+  transform: translateY(-1px);
 }
 
 .btn-sm {
-  padding: 0.4rem 0.8rem;
+  padding: 0.4rem 0.85rem;
   font-size: 0.85rem;
   border-radius: var(--radius-sm);
 }
@@ -144,8 +189,8 @@ a {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 1.2rem;
+  gap: 0.45rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-label {
@@ -156,18 +201,26 @@ a {
 
 .form-input, .form-textarea, .form-select {
   width: 100%;
-  padding: 0.7rem 0.9rem;
-  background-color: #0a1f14;
-  border: 1px solid var(--color-card-border);
+  padding: 0.75rem 1rem;
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: var(--radius-md);
   color: var(--color-text);
   font-size: 0.95rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.form-input::placeholder, .form-textarea::placeholder {
+  color: var(--color-text-subtle);
 }
 
 .form-input:focus, .form-textarea:focus, .form-select:focus {
+  background-color: #ffffff;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent-bg);
+  box-shadow: 0 0 0 3px var(--color-accent-bg), inset 0 1px 2px rgba(0, 0, 0, 0.02);
   outline: none;
 }
 

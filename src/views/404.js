@@ -17,34 +17,39 @@ function renderNotFoundHtml(message = 'Menu not found or currently unavailable.'
       text-align: center;
     }
     .not-found-card {
-      background: var(--color-card);
-      border: 1px solid rgba(244, 239, 226, 0.08);
-      border-radius: 16px;
-      padding: 2.5rem 2rem;
-      max-width: 440px;
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(28px) saturate(190%);
+      -webkit-backdrop-filter: blur(28px) saturate(190%);
+      border: 1px solid rgba(255, 255, 255, 0.95);
+      border-radius: var(--radius-xl);
+      padding: 3rem 2.25rem;
+      max-width: 460px;
       width: 100%;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+      box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.1), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
     }
     .not-found-icon {
-      font-size: 3rem;
+      font-size: 3.2rem;
       margin-bottom: 1rem;
+      display: inline-block;
+      filter: drop-shadow(0 4px 10px rgba(5, 150, 105, 0.15));
     }
     .not-found-title {
       font-family: var(--font-heading);
       color: var(--color-text);
-      font-size: 1.6rem;
-      margin-bottom: 0.5rem;
-    }
-    .not-found-desc {
-      color: var(--color-text-muted);
-      font-size: 1rem;
-      line-height: 1.5;
-      margin-bottom: 1.5rem;
+      font-size: 1.85rem;
+      margin-bottom: 0.35rem;
     }
     .not-found-sub {
       color: var(--color-accent);
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+    }
+    .not-found-desc {
+      color: var(--color-text-muted);
+      font-size: 0.98rem;
+      line-height: 1.55;
+      margin-bottom: 2rem;
     }
   </style>
 </head>
@@ -54,7 +59,7 @@ function renderNotFoundHtml(message = 'Menu not found or currently unavailable.'
     <h1 class="not-found-title">Menu not found</h1>
     <p class="not-found-sub">மெனு கிடைக்கவில்லை</p>
     <p class="not-found-desc">${message}</p>
-    <a href="/" class="btn btn-primary" style="display:inline-block; text-decoration:none;">Go home</a>
+    <a href="/" class="btn btn-primary" style="display:inline-flex; text-decoration:none;">Go home</a>
   </div>
 </body>
 </html>`;

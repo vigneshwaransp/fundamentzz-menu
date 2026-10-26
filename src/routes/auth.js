@@ -22,7 +22,7 @@ router.post('/login', async (req, res) => {
   if (checkLoginRateLimit(ip)) {
     return res.status(429).json({
       error: 'Too Many Requests',
-      message: 'Too many failed login attempts. Please try again in 10 minutes.'
+      message: 'Too many failed login attempts. Please try again in 5 minutes.'
     });
   }
 

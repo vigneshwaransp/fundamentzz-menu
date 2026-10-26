@@ -30,16 +30,31 @@
     const container = document.getElementById('toast-container');
     if (!container) return;
 
+    // Deduplicate: if an identical message is already showing, pulse it instead of creating duplicates
+    const existing = Array.from(container.querySelectorAll('.toast')).find(t => t.dataset.message === message);
+    if (existing) {
+      existing.style.animation = 'none';
+      void existing.offsetHeight;
+      existing.style.animation = 'toastPulse 0.3s ease';
+      return;
+    }
+
+    // Limit visible toasts to at most 3
+    while (container.children.length >= 3) {
+      container.firstChild.remove();
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    toast.dataset.message = message;
     
     let icon = '✓';
     if (type === 'error') icon = '✕';
     if (type === 'info') icon = 'ℹ';
 
     toast.innerHTML = `
-      <span style="font-weight: bold;">${icon}</span>
-      <span>${escapeHtml(message)}</span>
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-text">${escapeHtml(message)}</span>
     `;
 
     container.appendChild(toast);
@@ -48,7 +63,7 @@
       toast.style.opacity = '0';
       toast.style.transform = 'translateY(8px)';
       setTimeout(() => toast.remove(), 250);
-    }, 3500);
+    }, 4000);
   }
 
   // ----------------------------------------------------
@@ -250,20 +265,33 @@
     adminHeader.hidden = true;
     appRoot.innerHTML = `
       <div class="login-view-wrap">
-        <div class="login-card">
+        <div class="login-card glass-panel">
           <div class="login-header">
-            <div style="font-size: 2.8rem; margin-bottom: 0.5rem;" aria-hidden="true">🍃</div>
+            <div class="login-brand-badge" aria-hidden="true">🍃</div>
             <h1 class="login-title">Digital Menu</h1>
-            <p class="login-subtitle">Restaurant owner sign in</p>
+            <p class="login-subtitle">Restaurant Owner Sign In</p>
           </div>
+
+          <div class="credentials-hint-card">
+            <div class="hint-header">
+              <span>🔑</span>
+              <span>Default Owner Account</span>
+            </div>
+            <div class="hint-body">
+              <div>Email: <strong>owner@fundamentzz.local</strong></div>
+              <div>Password: <strong>supersecretownerpassword123</strong></div>
+            </div>
+            <button type="button" class="btn-fill-demo" id="fill-credentials-btn">Auto-fill credentials</button>
+          </div>
+
           <form id="login-form">
             <div class="form-group">
               <label class="form-label" for="login-email">Email address</label>
-              <input type="email" id="login-email" class="form-input" required autocomplete="username" placeholder="owner@restaurant.com">
+              <input type="email" id="login-email" class="form-input" required autocomplete="username" value="owner@fundamentzz.local">
             </div>
             <div class="form-group">
               <label class="form-label" for="login-password">Password</label>
-              <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="••••••••">
+              <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="supersecretownerpassword123">
             </div>
             <button type="submit" class="btn btn-primary" id="login-submit-btn" style="width: 100%; margin-top: 1rem;">
               Sign in
@@ -275,6 +303,15 @@
 
     const form = document.getElementById('login-form');
     const submitBtn = document.getElementById('login-submit-btn');
+    const fillBtn = document.getElementById('fill-credentials-btn');
+
+    if (fillBtn) {
+      fillBtn.addEventListener('click', () => {
+        document.getElementById('login-email').value = 'owner@fundamentzz.local';
+        document.getElementById('login-password').value = 'supersecretownerpassword123';
+        showToast('Credentials filled. Click "Sign in" to continue.', 'info');
+      });
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

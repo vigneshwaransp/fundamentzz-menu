@@ -95,16 +95,16 @@ const loginFailuresByIp = new Map();
 
 function checkLoginRateLimit(ip) {
   const now = Date.now();
-  const windowMs = 10 * 60 * 1000; // 10 minutes
+  const windowMs = 5 * 60 * 1000; // 5 minutes
   const timestamps = loginFailuresByIp.get(ip) || [];
   const recent = timestamps.filter(t => now - t < windowMs);
   loginFailuresByIp.set(ip, recent);
-  return recent.length >= 8;
+  return recent.length >= 25;
 }
 
 function recordLoginFailure(ip) {
   const now = Date.now();
-  const windowMs = 10 * 60 * 1000;
+  const windowMs = 5 * 60 * 1000;
   const timestamps = loginFailuresByIp.get(ip) || [];
   const recent = timestamps.filter(t => now - t < windowMs);
   recent.push(now);
