@@ -1,0 +1,30 @@
+{
+  "name": "fundamentzzmenu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/verify.js",
+    "test:browser": "node test/playwright-test.js",
+    "setup:fonts": "node scripts/setup-fonts.js",
+    "sample:data": "node scripts/generate-sample-data.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.6.1",
+    "bcryptjs": "^3.0.3",
+    "express": "^5.3.0",
+    "multer": "^2.5.0",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/hind-madurai": "^5.3.0",
+    "@fontsource/noto-serif-tamil": "^5.3.0",
+    "@playwright/test": "^1.64.1"
+  }
+}

@@ -1,0 +1,5 @@
+category,name,price,description,unit,available,image
+Breakfast,Idli Sambar · இட்லி சாம்பார்,40,"Steamed fluffy rice-lentil cakes with shallot sambar and coconut chutney",2 pcs,true,
+Breakfast,Poori Masala · பூரி கிழங்கு,75,"Puffed whole wheat bread served with spiced potato onion masala",3 pcs,true,
+Meals,Curd Rice · தயிர் சாதம்,65,"Tempered seasoned yogurt rice with mustard seeds, pomegranate and ginger",portion,true,
+Desserts,Rava Kesari · ரவா கேசரி,55,"Semolina dessert infused with saffron, pure ghee, roasted cashews and raisins",portion,false,

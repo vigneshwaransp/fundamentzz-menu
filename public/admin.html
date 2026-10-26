@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Owner Dashboard · Digital Menu</title>
+  
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body class="admin-body">
+  <!-- Top Navigation Bar -->
+  <header class="admin-header" id="admin-header" hidden>
+    <div class="admin-header-inner">
+      <div class="admin-brand" id="brand-home-btn">
+        <span class="admin-brand-icon">🍃</span>
+        <span>Digital Menu</span>
+      </div>
+      <div class="admin-user-menu">
+        <span class="user-email-tag" id="user-email-display"></span>
+        <button type="button" class="btn btn-secondary btn-sm" id="open-password-btn">Change password</button>
+        <button type="button" class="btn btn-secondary btn-sm" id="logout-btn">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main App Root -->
+  <main class="admin-main" id="app-root">
+    <!-- Dynamic views injected here by router -->
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Confirmation Modal -->
+  <dialog id="confirm-modal" class="admin-modal">
+    <div class="admin-modal-inner">
+      <h3 id="confirm-modal-title" style="margin-bottom: 0.6rem;">Confirm action</h3>
+      <p id="confirm-modal-message" style="color: var(--color-text-muted); font-size: 0.95rem;"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="confirm-modal-cancel">Cancel</button>
+        <button type="button" class="btn btn-destructive" id="confirm-modal-ok">Confirm</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Change Password Modal -->
+  <dialog id="password-modal" class="admin-modal">
+    <div class="admin-modal-inner">
+      <h3 style="margin-bottom: 1.25rem;">Change account password</h3>
+      <form id="password-form">
+        <div class="form-group">
+          <label class="form-label" for="old-password-input">Current password</label>
+          <input type="password" id="old-password-input" class="form-input" required autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new-password-input">New password (min 8 characters)</label>
+          <input type="password" id="new-password-input" class="form-input" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="password-modal-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update password</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Client Application Script -->
+  <script src="/js/admin.js"></script>
+</body>
+</html>

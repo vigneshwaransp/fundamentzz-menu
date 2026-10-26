@@ -1,0 +1,8 @@
+node_modules
+data
+screenshots
+samples
+test
+.git
+.gitignore
+.env

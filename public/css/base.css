@@ -1,0 +1,189 @@
+:root {
+  /* Palette */
+  --color-bg: #0e2a1c;          /* Banana-leaf deep green */
+  --color-card: #133424;        /* Banana-leaf card surface */
+  --color-card-hover: #19432f;  /* Card surface hover */
+  --color-card-border: rgba(244, 239, 226, 0.1);
+  --color-text: #f4efe2;        /* Rice-flour ivory */
+  --color-text-muted: #c8c2b5;  /* Soft ivory */
+  --color-accent: #e8b13a;      /* Turmeric single accent */
+  --color-accent-hover: #f3be4d;/* Turmeric brighter hover */
+  --color-accent-bg: rgba(232, 177, 58, 0.15);
+  --color-destructive: #e0614b; /* Chilli for sold-out and destructive actions */
+  --color-destructive-bg: rgba(224, 97, 75, 0.15);
+
+  /* Typography */
+  --font-heading: 'Fraunces Variable', 'Noto Serif Tamil', serif;
+  --font-body: 'Hind Madurai', sans-serif;
+  --font-price: 'Hind Madurai', sans-serif;
+
+  /* Spacing & Radii */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Strict requirement: [hidden] must have display: none !important */
+[hidden] {
+  display: none !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  /* Faint kolam dot-grid motif */
+  background-image: radial-gradient(rgba(244, 239, 226, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  color: var(--color-text);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Visible focus rings for accessibility */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.25;
+  text-transform: none; /* Sentence case, avoid tracked all-caps */
+  letter-spacing: normal;
+}
+
+p, span, label, input, button, select, textarea {
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Base Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: #0e2a1c; /* Contrast with turmeric */
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-card);
+  color: var(--color-text);
+  border-color: var(--color-card-border);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-card-hover);
+  border-color: rgba(244, 239, 226, 0.2);
+}
+
+.btn-destructive {
+  background-color: var(--color-destructive-bg);
+  color: var(--color-destructive);
+  border-color: rgba(224, 97, 75, 0.3);
+}
+
+.btn-destructive:hover {
+  background-color: var(--color-destructive);
+  color: #ffffff;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Base Form Inputs */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.2rem;
+}
+
+.form-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background-color: #0a1f14;
+  border: 1px solid var(--color-card-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-bg);
+  outline: none;
+}
+
+.form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
