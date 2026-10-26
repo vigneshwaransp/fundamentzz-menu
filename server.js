@@ -9,8 +9,68 @@ const authRoutes = require('./src/routes/auth');
 const menusRoutes = require('./src/routes/menus');
 const mediaRoutes = require('./src/routes/media');
 const publicRoutes = require('./src/routes/public');
+const fs = require('fs');
 
 const app = express();
+
+let initPromise = null;
+async function ensureInit() {
+  if (!initPromise) {
+    initPromise = (async () => {
+      await initDataDir();
+      await seedOwnerIfNeeded();
+
+      // On serverless / cold start, seed sample menu if no menus exist
+      const db = require('./src/db');
+      const menus = await db.listMenus();
+      if (menus.length === 0) {
+        try {
+          const sampleZipPath = path.join(__dirname, 'samples', 'sample-fundamentzz-menu.zip');
+          if (fs.existsSync(sampleZipPath)) {
+            const { parseUploadedMenuFile } = require('./src/parser');
+            const { processBatchImages } = require('./src/images');
+            const zipBytes = fs.readFileSync(sampleZipPath);
+            const { categories, items, imageJobs } = await parseUploadedMenuFile(zipBytes, 'sample-fundamentzz-menu.zip');
+            const menuId = 'menu_demo';
+            const version = `v${Date.now()}`;
+            const processedItemIds = await processBatchImages(menuId, version, imageJobs);
+            for (const it of items) it.image = processedItemIds.has(it.id);
+            const now = new Date().toISOString();
+            await db.saveMenu({
+              id: menuId,
+              slug: 'banana-leaf-bhavan-demo',
+              name: 'Banana Leaf Bhavan',
+              tagline: 'Authentic South Indian & Chettinad Kitchen',
+              address: '42 Cross Cut Road, Gandhipuram, Coimbatore',
+              phone: '+91 98765 43210',
+              currency: 'INR',
+              footnote: 'All items prepared fresh with gingelly oil and pure ghee. GST included.',
+              published: true,
+              imageVersion: version,
+              categories,
+              items,
+              createdAt: now,
+              updatedAt: now
+            });
+          }
+        } catch (err) {
+          console.warn('[SEED WARNING]', err.message);
+        }
+      }
+    })();
+  }
+  return initPromise;
+}
+
+// Auto-initialize on request (supports Vercel serverless cold-starts)
+app.use(async (req, res, next) => {
+  try {
+    await ensureInit();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {
