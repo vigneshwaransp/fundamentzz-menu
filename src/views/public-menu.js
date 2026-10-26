@@ -76,9 +76,9 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <meta name="description" content="${escapeHtml(ogDescription)}">
 
   <!-- Self-hosted Fonts and Stylesheets -->
-  <link rel="stylesheet" href="/fonts/fonts.css?v=2.1">
-  <link rel="stylesheet" href="/css/base.css?v=2.1">
-  <link rel="stylesheet" href="/css/public.css?v=2.1">
+  <link rel="stylesheet" href="/fonts/fonts.css?v=2.2">
+  <link rel="stylesheet" href="/css/base.css?v=2.2">
+  <link rel="stylesheet" href="/css/public.css?v=2.2">
 </head>
 <body class="public-menu-body">
   ${isPreview ? `
@@ -97,7 +97,7 @@ function renderPublicMenuHtml(menu, isPreview = false) {
         <div class="hero-plates-row" aria-hidden="true">
           ${heroPlates.map((dish, i) => `
             <div class="hero-plate" style="--stagger-delay: ${(i * 0.08).toFixed(2)}s">
-              <img src="/media/${escapeHtml(menu.slug)}/${escapeHtml(menu.imageVersion)}/${escapeHtml(dish.id)}-thumb.webp"
+              <img src="${escapeHtml(dish.thumbData || `/media/${menu.slug}/${menu.imageVersion}/${dish.id}-thumb.webp`)}"
                    alt=""
                    loading="eager"
                    width="72"
@@ -181,10 +181,10 @@ function renderPublicMenuHtml(menu, isPreview = false) {
 
             const largeImgUrl = dish.image && menu.imageVersion
               ? `/media/${escapeHtml(menu.slug)}/${escapeHtml(menu.imageVersion)}/${escapeHtml(dish.id)}.webp`
-              : '';
-            const thumbImgUrl = dish.image && menu.imageVersion
+              : (dish.thumbData || '');
+            const thumbImgUrl = dish.thumbData || (dish.image && menu.imageVersion
               ? `/media/${escapeHtml(menu.slug)}/${escapeHtml(menu.imageVersion)}/${escapeHtml(dish.id)}-thumb.webp`
-              : '';
+              : '');
 
             return `
               <article class="dish-card ${isSoldOut ? 'is-sold-out' : ''}"
@@ -194,12 +194,13 @@ function renderPublicMenuHtml(menu, isPreview = false) {
                        data-dish-price="${escapeHtml(formattedPrice + unitText)}"
                        data-dish-desc="${escapeHtml(dish.description || '')}"
                        data-dish-image="${escapeHtml(largeImgUrl)}"
+                       data-dish-thumb="${escapeHtml(dish.thumbData || '')}"
                        tabindex="0"
                        role="button"
                        aria-haspopup="dialog"
                        aria-label="${escapeHtml(dish.name)}, ${escapeHtml(formattedPrice + unitText)}${isSoldOut ? ', sold out' : ''}">
                 <div class="dish-media-wrap">
-                  ${dish.image ? `
+                  ${(dish.image || dish.thumbData) ? `
                     <img src="${escapeHtml(thumbImgUrl)}"
                          alt="${escapeHtml(dish.name)}"
                          class="dish-thumb"
@@ -253,7 +254,7 @@ function renderPublicMenuHtml(menu, isPreview = false) {
       <button type="button" class="dialog-close-btn" id="dialog-close-btn" aria-label="Close dialog">✕</button>
       
       <div id="dialog-img-wrap" class="dialog-img-wrap" hidden>
-        <img id="dialog-img" src="" alt="" class="dialog-img">
+        <img id="dialog-img" alt="" class="dialog-img">
       </div>
 
       <div class="dialog-details">
@@ -267,7 +268,7 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   </dialog>
 
   <!-- Client JavaScript for search, sticky nav, dialog -->
-  <script src="/js/public.js?v=2.1"></script>
+  <script src="/js/public.js?v=2.2"></script>
 </body>
 </html>`;
 }

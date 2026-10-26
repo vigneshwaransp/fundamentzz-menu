@@ -41,6 +41,42 @@ function parseAvailable(val) {
 }
 
 /**
+ * Clean path basename across Windows (\) and Linux (/) separators
+ */
+function getCleanBasename(filepath) {
+  if (!filepath) return '';
+  const normalized = String(filepath).replace(/\\/g, '/');
+  return path.basename(normalized).toLowerCase();
+}
+
+/**
+ * Robust image matching across explicit filenames, IDs, and dish names
+ */
+function findImageBuffer(imageMap, candidateNames) {
+  if (!imageMap || imageMap.size === 0) return null;
+  for (const rawName of candidateNames) {
+    if (!rawName) continue;
+    const base = getCleanBasename(rawName);
+    if (!base) continue;
+
+    // 1. Direct match with extension
+    if (imageMap.has(base)) {
+      return imageMap.get(base);
+    }
+
+    // 2. Match without extension
+    const baseWithoutExt = base.replace(/\.[a-z0-9]+$/, '');
+    for (const [key, buf] of imageMap.entries()) {
+      const keyWithoutExt = key.replace(/\.[a-z0-9]+$/, '');
+      if (keyWithoutExt === baseWithoutExt) {
+        return buf;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * RFC-4180 compliant CSV parser
  */
 function parseCSV(text) {
@@ -186,18 +222,21 @@ function parseFundamentzzJson(json, imageMap) {
     const available = parseAvailable(p.is_available ?? p.available);
     const description = sanitizeString(p.description || '', 500);
 
-    // Image matching
+    // Resilient image matching
     let hasImage = false;
-    const imgFilename = p.image_filename || p.image || '';
-    if (imgFilename && imageMap) {
-      const baseName = path.basename(imgFilename).toLowerCase();
-      if (imageMap.has(baseName)) {
-        hasImage = true;
-        imageJobs.push({
-          itemId,
-          buffer: imageMap.get(baseName)
-        });
-      }
+    const imgFilename = p.image_filename || p.image || p.imageUrl || p.image_url || '';
+    const imgBuf = findImageBuffer(imageMap, [
+      imgFilename,
+      p.id,
+      p.name,
+      p.name ? p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''
+    ]);
+    if (imgBuf) {
+      hasImage = true;
+      imageJobs.push({
+        itemId,
+        buffer: imgBuf
+      });
     }
 
     items.push({
@@ -295,16 +334,19 @@ function parseGenericJson(json, imageMap) {
     const description = sanitizeString(rawItem.description || '', 500);
 
     let hasImage = false;
-    const imgFilename = rawItem.image || rawItem.image_filename || '';
-    if (imgFilename && imageMap) {
-      const baseName = path.basename(imgFilename).toLowerCase();
-      if (imageMap.has(baseName)) {
-        hasImage = true;
-        imageJobs.push({
-          itemId,
-          buffer: imageMap.get(baseName)
-        });
-      }
+    const imgFilename = rawItem.image || rawItem.image_filename || rawItem.imageUrl || rawItem.image_url || '';
+    const imgBuf = findImageBuffer(imageMap, [
+      imgFilename,
+      rawItem.id,
+      rawItem.name,
+      rawItem.name ? rawItem.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''
+    ]);
+    if (imgBuf) {
+      hasImage = true;
+      imageJobs.push({
+        itemId,
+        buffer: imgBuf
+      });
     }
 
     items.push({
@@ -395,15 +437,17 @@ function parseCsvMenu(csvText, imageMap) {
 
     const rawImg = colIndex.image !== -1 ? (row[colIndex.image] || '').trim() : '';
     let hasImage = false;
-    if (rawImg && imageMap) {
-      const baseName = path.basename(rawImg).toLowerCase();
-      if (imageMap.has(baseName)) {
-        hasImage = true;
-        imageJobs.push({
-          itemId,
-          buffer: imageMap.get(baseName)
-        });
-      }
+    const imgBuf = findImageBuffer(imageMap, [
+      rawImg,
+      name,
+      name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : ''
+    ]);
+    if (imgBuf) {
+      hasImage = true;
+      imageJobs.push({
+        itemId,
+        buffer: imgBuf
+      });
     }
 
     items.push({

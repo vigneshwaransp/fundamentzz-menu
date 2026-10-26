@@ -20,10 +20,13 @@ async function ensureInit() {
       await initDataDir();
       await seedOwnerIfNeeded();
 
-      // On serverless / cold start, seed sample menu if no menus exist
+      // On serverless / cold start, seed sample menus if not present
       const db = require('./src/db');
       const menus = await db.listMenus();
-      if (menus.length === 0) {
+      const existingSlugs = new Set(menus.map(m => m.slug));
+
+      // 1. Seed demo menu if not present
+      if (!existingSlugs.has('banana-leaf-bhavan-demo')) {
         try {
           const sampleZipPath = path.join(__dirname, 'samples', 'sample-fundamentzz-menu.zip');
           if (fs.existsSync(sampleZipPath)) {
@@ -32,9 +35,22 @@ async function ensureInit() {
             const zipBytes = fs.readFileSync(sampleZipPath);
             const { categories, items, imageJobs } = await parseUploadedMenuFile(zipBytes, 'sample-fundamentzz-menu.zip');
             const menuId = 'menu_demo';
-            const version = `v${Date.now()}`;
-            const processedItemIds = await processBatchImages(menuId, version, imageJobs);
-            for (const it of items) it.image = processedItemIds.has(it.id);
+            const version = 'v_demo_stable';
+
+            // Map items to deterministic IDs for cross-container stability
+            items.forEach((it, idx) => {
+              const oldId = it.id;
+              it.id = `itm_demo_${idx + 1}`;
+              const job = imageJobs.find(j => j.itemId === oldId);
+              if (job) job.itemId = it.id;
+            });
+
+            const processed = await processBatchImages(menuId, version, imageJobs);
+            for (const it of items) {
+              it.image = processed.has(it.id);
+              if (processed.thumbMap?.has(it.id)) it.thumbData = processed.thumbMap.get(it.id);
+            }
+
             const now = new Date().toISOString();
             await db.saveMenu({
               id: menuId,
@@ -54,7 +70,56 @@ async function ensureInit() {
             });
           }
         } catch (err) {
-          console.warn('[SEED WARNING]', err.message);
+          console.warn('[SEED DEMO WARNING]', err.message);
+        }
+      }
+
+      // 2. Seed Tamil menu if not present
+      if (!existingSlugs.has('tamil-menu')) {
+        try {
+          const tamilZipPath = path.join(__dirname, 'samples', 'tamil_menu.zip');
+          if (fs.existsSync(tamilZipPath)) {
+            const { parseUploadedMenuFile } = require('./src/parser');
+            const { processBatchImages } = require('./src/images');
+            const zipBytes = fs.readFileSync(tamilZipPath);
+            const { categories, items, imageJobs } = await parseUploadedMenuFile(zipBytes, 'tamil_menu.zip');
+            const menuId = 'menu_tamil';
+            const version = 'v_tamil_stable';
+
+            // Map items to deterministic IDs
+            items.forEach((it, idx) => {
+              const oldId = it.id;
+              it.id = `itm_tamil_${idx + 1}`;
+              const job = imageJobs.find(j => j.itemId === oldId);
+              if (job) job.itemId = it.id;
+            });
+
+            const processed = await processBatchImages(menuId, version, imageJobs);
+            for (const it of items) {
+              it.image = processed.has(it.id);
+              if (processed.thumbMap?.has(it.id)) it.thumbData = processed.thumbMap.get(it.id);
+            }
+
+            const now = new Date().toISOString();
+            await db.saveMenu({
+              id: menuId,
+              slug: 'tamil-menu',
+              name: 'தமிழ் உணவகம் · Authentic Tamil Menu',
+              tagline: 'சுவையான செட்டிநாடு மற்றும் பாரம்பரிய உணவுகள் · Fresh & Authentic',
+              address: '42 Anna Salai, Chennai, Tamil Nadu',
+              phone: '+91 94440 12345',
+              currency: 'INR',
+              footnote: 'All dishes prepared fresh with traditional stone-ground spices. Taxes included.',
+              published: true,
+              imageVersion: version,
+              categories,
+              items,
+              createdAt: now,
+              updatedAt: now
+            });
+          }
+        } catch (err) {
+          console.warn('[SEED TAMIL WARNING]', err.message);
         }
       }
     })();

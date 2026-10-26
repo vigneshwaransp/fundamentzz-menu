@@ -50,9 +50,12 @@ async function processAndSaveMenu({ fileBuffer, fileName, customName, menuId }) 
   // Process matched images with Sharp
   const processedItemIds = await processBatchImages(targetMenuId, newImageVersion, imageJobs);
 
-  // Update item image boolean based on actual Sharp processing results
+  // Update item image boolean and embedded thumbnail based on actual Sharp processing results
   for (const item of items) {
     item.image = processedItemIds.has(item.id);
+    if (processedItemIds.thumbMap && processedItemIds.thumbMap.has(item.id)) {
+      item.thumbData = processedItemIds.thumbMap.get(item.id);
+    }
   }
 
   const now = new Date().toISOString();
@@ -97,9 +100,11 @@ router.get('/', async (req, res) => {
     const menus = await db.listMenus();
     const summaries = menus.map(m => {
       const firstDish = m.items?.find(it => it.image);
-      const coverImage = firstDish && m.imageVersion
-        ? `/media/${m.slug}/${m.imageVersion}/${firstDish.id}-thumb.webp`
-        : null;
+      const coverImage = firstDish?.thumbData
+        ? firstDish.thumbData
+        : (firstDish && m.imageVersion
+          ? `/media/${m.slug}/${m.imageVersion}/${firstDish.id}-thumb.webp`
+          : null);
 
       return {
         id: m.id,

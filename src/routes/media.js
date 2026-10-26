@@ -39,6 +39,21 @@ router.get('/:slug/:version/:file', attachUser, async (req, res) => {
   try {
     await fs.promises.access(safeFilePath, fs.constants.R_OK);
   } catch (err) {
+    // Cross-container serverless fallback:
+    // If the file is not on this lambda's /tmp disk, check if dish has embedded thumbData
+    const itemId = file.replace(/(-thumb)?\.webp$/, '');
+    const dish = (menu.items || []).find(it => it.id === itemId);
+    if (dish && dish.thumbData && dish.thumbData.startsWith('data:image/webp;base64,')) {
+      const b64 = dish.thumbData.slice('data:image/webp;base64,'.length);
+      const buf = Buffer.from(b64, 'base64');
+      try {
+        await fs.promises.mkdir(safeDir, { recursive: true });
+        await fs.promises.writeFile(safeFilePath, buf);
+      } catch (_) {}
+      res.setHeader('Content-Type', 'image/webp');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      return res.send(buf);
+    }
     return res.status(404).send('Not Found');
   }
 

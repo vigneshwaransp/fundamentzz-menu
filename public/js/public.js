@@ -128,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const price = card.getAttribute('data-dish-price') || '';
     const desc = card.getAttribute('data-dish-desc') || '';
     const imgSrc = card.getAttribute('data-dish-image') || '';
+    const thumbSrc = card.getAttribute('data-dish-thumb') || '';
 
     dialogName.textContent = name;
     dialogPrice.textContent = price;
@@ -135,6 +136,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (imgSrc) {
       dialogImg.src = imgSrc;
+      dialogImg.alt = name;
+      dialogImg.onerror = () => {
+        if (thumbSrc) dialogImg.src = thumbSrc;
+      };
+      dialogImgWrap.hidden = false;
+    } else if (thumbSrc) {
+      dialogImg.src = thumbSrc;
       dialogImg.alt = name;
       dialogImgWrap.hidden = false;
     } else {

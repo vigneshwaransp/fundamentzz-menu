@@ -958,21 +958,34 @@
           </div>
 
           <div class="dish-editor-list">
-            ${catItems.map(dish => `
+            ${catItems.map(dish => {
+              const dishThumb = dish.thumbData || (dish.image && menu.imageVersion ? `/media/${menu.slug}/${menu.imageVersion}/${dish.id}-thumb.webp` : '');
+              return `
               <div class="dish-editor-row" data-dish-id="${escapeHtml(dish.id)}">
-                <div>
-                  <input type="text"
-                         class="dish-field-input dish-name-input"
-                         value="${escapeHtml(dish.name)}"
-                         placeholder="Dish name"
-                         style="width: 100%; margin-bottom: 0.35rem;"
-                         data-dish-id="${escapeHtml(dish.id)}">
-                  <input type="text"
-                         class="dish-field-input dish-desc-input"
-                         value="${escapeHtml(dish.description || '')}"
-                         placeholder="Description (optional)"
-                         style="width: 100%; font-size: 0.82rem; color: var(--color-text-muted);"
-                         data-dish-id="${escapeHtml(dish.id)}">
+                <div style="display:flex; align-items:center; gap:0.65rem;">
+                  ${dishThumb ? `
+                    <img src="${escapeHtml(dishThumb)}"
+                         alt=""
+                         style="width:42px; height:42px; border-radius:8px; object-fit:cover; border:1px solid rgba(15,23,42,0.1); flex-shrink:0;">
+                  ` : `
+                    <div style="width:42px; height:42px; border-radius:8px; background:rgba(5,150,105,0.08); color:var(--color-accent); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:1.1rem; flex-shrink:0;">
+                      ${escapeHtml((dish.name || 'D').trim().charAt(0).toUpperCase())}
+                    </div>
+                  `}
+                  <div style="flex:1; min-width:0;">
+                    <input type="text"
+                           class="dish-field-input dish-name-input"
+                           value="${escapeHtml(dish.name)}"
+                           placeholder="Dish name"
+                           style="width: 100%; margin-bottom: 0.35rem;"
+                           data-dish-id="${escapeHtml(dish.id)}">
+                    <input type="text"
+                           class="dish-field-input dish-desc-input"
+                           value="${escapeHtml(dish.description || '')}"
+                           placeholder="Description (optional)"
+                           style="width: 100%; font-size: 0.82rem; color: var(--color-text-muted);"
+                           data-dish-id="${escapeHtml(dish.id)}">
+                  </div>
                 </div>
 
                 <div>
@@ -1015,7 +1028,8 @@
                   </button>
                 </div>
               </div>
-            `).join('')}
+            `;
+            }).join('')}
           </div>
         </div>
       `;
