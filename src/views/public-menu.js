@@ -76,9 +76,9 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <meta name="description" content="${escapeHtml(ogDescription)}">
 
   <!-- Self-hosted Fonts and Stylesheets -->
-  <link rel="stylesheet" href="/fonts/fonts.css">
-  <link rel="stylesheet" href="/css/base.css">
-  <link rel="stylesheet" href="/css/public.css">
+  <link rel="stylesheet" href="/fonts/fonts.css?v=2.1">
+  <link rel="stylesheet" href="/css/base.css?v=2.1">
+  <link rel="stylesheet" href="/css/public.css?v=2.1">
 </head>
 <body class="public-menu-body">
   ${isPreview ? `
@@ -267,7 +267,7 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   </dialog>
 
   <!-- Client JavaScript for search, sticky nav, dialog -->
-  <script src="/js/public.js"></script>
+  <script src="/js/public.js?v=2.1"></script>
 </body>
 </html>`;
 }

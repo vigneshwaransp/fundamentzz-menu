@@ -90,10 +90,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files (self-hosted fonts, CSS, client JS)
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1h',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.woff2')) {
       res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     }
   }
 }));

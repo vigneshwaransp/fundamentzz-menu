@@ -147,12 +147,12 @@
   }
 
   // ----------------------------------------------------
-  // XHR Upload Helper with Progress Bar
+  // XHR Upload Helper (Supports Single and Chunked Uploads to bypass Vercel 4.5 MB limit)
   // ----------------------------------------------------
-  function apiUpload(formData, onProgress) {
+  function uploadSingleRequest(url, formData, onProgress) {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', '/api/menus/upload');
+      xhr.open('POST', url);
       xhr.setRequestHeader('X-Requested-With', 'dm'); // CSRF Header
       xhr.setRequestHeader('Accept', 'application/json');
 
@@ -189,6 +189,58 @@
 
       xhr.send(formData);
     });
+  }
+
+  async function apiUpload(formData, onProgress) {
+    const file = formData.get('file');
+    const menuId = formData.get('menuId') || '';
+    const name = formData.get('name') || '';
+
+    const CHUNK_SIZE = 3 * 1024 * 1024; // 3 MB chunks (safely below Vercel 4.5 MB gateway limit)
+
+    // For files 3.5 MB or smaller, use standard single upload
+    if (!file || file.size <= 3.5 * 1024 * 1024) {
+      return uploadSingleRequest('/api/menus/upload', formData, onProgress);
+    }
+
+    // For files > 3.5 MB (e.g. 5.3 MB tamil_menu.zip), upload in sequential 3 MB chunks
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uploadId = 'upl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+    let finalResponse = null;
+    for (let i = 0; i < totalChunks; i++) {
+      const start = i * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunkBlob = file.slice(start, end);
+
+      const chunkForm = new FormData();
+      chunkForm.append('chunk', chunkBlob, file.name);
+      chunkForm.append('uploadId', uploadId);
+      chunkForm.append('chunkIndex', String(i));
+      chunkForm.append('totalChunks', String(totalChunks));
+      chunkForm.append('fileName', file.name);
+      if (name) chunkForm.append('name', name);
+      if (menuId) chunkForm.append('menuId', menuId);
+
+      const progressBase = (i / totalChunks) * 100;
+      const progressSpan = (1 / totalChunks) * 100;
+
+      const chunkRes = await uploadSingleRequest('/api/menus/upload-chunk', chunkForm, (chunkPct) => {
+        if (onProgress) {
+          const overall = Math.min(99, Math.round(progressBase + (chunkPct / 100) * progressSpan));
+          onProgress(overall);
+        }
+      });
+
+      if (!chunkRes.ok) {
+        return chunkRes;
+      }
+
+      finalResponse = chunkRes;
+    }
+
+    if (onProgress) onProgress(100);
+    return finalResponse;
   }
 
   function escapeHtml(str) {

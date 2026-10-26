@@ -460,6 +460,73 @@ async function runTests() {
     assert(badFileRes.status === 400, 'Bad file type returns 400 Bad Request');
     assert(badFileRes.json?.message?.includes('.zip, .json, or .csv'), `Clear error message returned: "${badFileRes.json?.message}"`);
 
+    // 18b. Test Chunked Upload (/api/menus/upload-chunk)
+    const sampleZip = path.join(__dirname, '..', 'samples', 'sample-fundamentzz-menu.zip');
+    const zipBytesForChunk = fs.readFileSync(sampleZip);
+    const midPoint = Math.floor(zipBytesForChunk.length / 2);
+    const chunk0 = zipBytesForChunk.slice(0, midPoint);
+    const chunk1 = zipBytesForChunk.slice(midPoint);
+    const testUploadId = 'test_upl_' + Date.now();
+
+    // Send Chunk 0
+    const chunk0Boundary = '----WebKitFormBoundary' + Math.random().toString(36).slice(2);
+    const chunk0Body = Buffer.concat([
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="uploadId"\r\n\r\n${testUploadId}\r\n`),
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="chunkIndex"\r\n\r\n0\r\n`),
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="totalChunks"\r\n\r\n2\r\n`),
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="fileName"\r\n\r\nsample-fundamentzz-menu.zip\r\n`),
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="name"\r\n\r\nChunked Menu\r\n`),
+      Buffer.from(`--${chunk0Boundary}\r\nContent-Disposition: form-data; name="chunk"; filename="part0"\r\nContent-Type: application/octet-stream\r\n\r\n`),
+      chunk0,
+      Buffer.from(`\r\n--${chunk0Boundary}--\r\n`)
+    ]);
+
+    const chunk0Res = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/upload-chunk',
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${chunk0Boundary}`,
+        'Content-Length': chunk0Body.length,
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, chunk0Body);
+
+    assert(chunk0Res.status === 200, 'Chunk 0 upload returns 200 OK');
+    assert(chunk0Res.json?.chunkReceived === 0, 'Chunk 0 acknowledged by server');
+
+    // Send Chunk 1 (final chunk)
+    const chunk1Boundary = '----WebKitFormBoundary' + Math.random().toString(36).slice(2);
+    const chunk1Body = Buffer.concat([
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="uploadId"\r\n\r\n${testUploadId}\r\n`),
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="chunkIndex"\r\n\r\n1\r\n`),
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="totalChunks"\r\n\r\n2\r\n`),
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="fileName"\r\n\r\nsample-fundamentzz-menu.zip\r\n`),
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="name"\r\n\r\nChunked Menu\r\n`),
+      Buffer.from(`--${chunk1Boundary}\r\nContent-Disposition: form-data; name="chunk"; filename="part1"\r\nContent-Type: application/octet-stream\r\n\r\n`),
+      chunk1,
+      Buffer.from(`\r\n--${chunk1Boundary}--\r\n`)
+    ]);
+
+    const chunk1Res = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/upload-chunk',
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${chunk1Boundary}`,
+        'Content-Length': chunk1Body.length,
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, chunk1Body);
+
+    assert(chunk1Res.status === 200, 'Final chunk upload returns 200 OK');
+    assert(chunk1Res.json?.menu?.id, 'Chunked menu successfully assembled and created');
+    assert(chunk1Res.json?.menu?.items?.length === 6, 'Chunked menu items successfully processed');
+
     // 19. QR SVG download
     const qrRes = await request({
       hostname: '127.0.0.1',

@@ -3,12 +3,14 @@ const router = express.Router();
 const multer = require('multer');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const db = require('../db');
 const { requirePerm } = require('../middleware');
 const { parseUploadedMenuFile, sanitizeString, parsePrice, parseAvailable } = require('../parser');
 const { processBatchImages, deleteOldImageVersion } = require('../images');
 const { generateSlug } = require('../slug');
-const { PUBLIC_URL } = require('../config');
+const { PUBLIC_URL, DATA_DIR } = require('../config');
 
 // Multer upload up to 80 MB in memory
 const upload = multer({
@@ -20,6 +22,72 @@ const upload = multer({
 
 // Protect all /api/menus* routes with requirePerm('menus:read') or 'menus:write'
 router.use(requirePerm('menus:read'));
+
+/**
+ * Shared helper to parse, process images, and persist a menu from buffer
+ */
+async function processAndSaveMenu({ fileBuffer, fileName, customName, menuId }) {
+  let existingMenu = null;
+  if (menuId) {
+    existingMenu = await db.getMenuById(menuId);
+    if (!existingMenu) {
+      const err = new Error('Target menu to replace was not found.');
+      err.statusCode = 404;
+      throw err;
+    }
+  }
+
+  let name = sanitizeString(customName || (existingMenu ? existingMenu.name : 'Digital Menu'), 100);
+  if (!name) name = 'Digital Menu';
+
+  // Parse the uploaded file (zip, json, csv)
+  const { categories, items, imageJobs } = await parseUploadedMenuFile(fileBuffer, fileName);
+
+  const targetMenuId = existingMenu ? existingMenu.id : `menu_${crypto.randomBytes(6).toString('hex')}`;
+  const targetSlug = existingMenu ? existingMenu.slug : generateSlug(name);
+  const newImageVersion = `v${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+
+  // Process matched images with Sharp
+  const processedItemIds = await processBatchImages(targetMenuId, newImageVersion, imageJobs);
+
+  // Update item image boolean based on actual Sharp processing results
+  for (const item of items) {
+    item.image = processedItemIds.has(item.id);
+  }
+
+  const now = new Date().toISOString();
+  const updatedMenu = {
+    id: targetMenuId,
+    slug: targetSlug,
+    name,
+    tagline: existingMenu?.tagline || 'Fresh flavors, crafted daily',
+    address: existingMenu?.address || '',
+    phone: existingMenu?.phone || '',
+    currency: existingMenu?.currency || 'INR',
+    footnote: existingMenu?.footnote || 'All items prepared fresh. Taxes and service charges as applicable.',
+    published: true, // A new upload or replace is published immediately
+    imageVersion: newImageVersion,
+    categories,
+    items,
+    createdAt: existingMenu ? existingMenu.createdAt : now,
+    updatedAt: now
+  };
+
+  await db.saveMenu(updatedMenu);
+
+  // If replacing existing menu, safely delete old image version folder
+  if (existingMenu && existingMenu.imageVersion) {
+    await deleteOldImageVersion(targetMenuId, existingMenu.imageVersion);
+  }
+
+  return {
+    menu: {
+      ...updatedMenu,
+      publicUrl: `${PUBLIC_URL}/m/${updatedMenu.slug}`
+    },
+    isReplace: !!existingMenu
+  };
+}
 
 /**
  * GET /api/menus - List all menus
@@ -79,7 +147,7 @@ router.get('/:id', async (req, res) => {
 });
 
 /**
- * POST /api/menus/upload - Upload new menu or replace existing
+ * POST /api/menus/upload - Upload new menu or replace existing (single request)
  */
 router.post('/upload', requirePerm('menus:write'), (req, res, next) => {
   upload.single('file')(req, res, (err) => {
@@ -95,75 +163,111 @@ router.post('/upload', requirePerm('menus:write'), (req, res, next) => {
   });
 }, async (req, res) => {
   try {
-    const { menuId } = req.body || {};
-    let { name } = req.body || {};
+    const { menuId, name } = req.body || {};
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({ error: 'Bad Request', message: 'Please select a menu file (.zip, .json, or .csv) to upload.' });
     }
 
-    let existingMenu = null;
-    if (menuId) {
-      existingMenu = await db.getMenuById(menuId);
-      if (!existingMenu) {
-        return res.status(404).json({ error: 'Not Found', message: 'Target menu to replace was not found.' });
-      }
-    }
-
-    name = sanitizeString(name || (existingMenu ? existingMenu.name : 'Digital Menu'), 100);
-    if (!name) name = 'Digital Menu';
-
-    // Parse the uploaded file (zip, json, csv)
-    const { categories, items, imageJobs } = await parseUploadedMenuFile(file.buffer, file.originalname);
-
-    const targetMenuId = existingMenu ? existingMenu.id : `menu_${crypto.randomBytes(6).toString('hex')}`;
-    const targetSlug = existingMenu ? existingMenu.slug : generateSlug(name);
-    const newImageVersion = `v${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
-
-    // Process matched images with Sharp
-    const processedItemIds = await processBatchImages(targetMenuId, newImageVersion, imageJobs);
-
-    // Update item image boolean based on actual Sharp processing results
-    for (const item of items) {
-      item.image = processedItemIds.has(item.id);
-    }
-
-    const now = new Date().toISOString();
-    const updatedMenu = {
-      id: targetMenuId,
-      slug: targetSlug,
-      name,
-      tagline: existingMenu?.tagline || 'Fresh flavors, crafted daily',
-      address: existingMenu?.address || '',
-      phone: existingMenu?.phone || '',
-      currency: existingMenu?.currency || 'INR',
-      footnote: existingMenu?.footnote || 'All items prepared fresh. Taxes and service charges as applicable.',
-      published: true, // A new upload or replace is published immediately
-      imageVersion: newImageVersion,
-      categories,
-      items,
-      createdAt: existingMenu ? existingMenu.createdAt : now,
-      updatedAt: now
-    };
-
-    await db.saveMenu(updatedMenu);
-
-    // If replacing existing menu, safely delete old image version folder
-    if (existingMenu && existingMenu.imageVersion) {
-      await deleteOldImageVersion(targetMenuId, existingMenu.imageVersion);
-    }
+    const result = await processAndSaveMenu({
+      fileBuffer: file.buffer,
+      fileName: file.originalname,
+      customName: name,
+      menuId
+    });
 
     res.json({
       ok: true,
-      message: existingMenu ? 'Menu content replaced successfully' : 'New menu uploaded and published',
-      menu: {
-        ...updatedMenu,
-        publicUrl: `${PUBLIC_URL}/m/${updatedMenu.slug}`
-      }
+      message: result.isReplace ? 'Menu content replaced successfully' : 'New menu uploaded and published',
+      menu: result.menu
     });
   } catch (err) {
-    res.status(400).json({ error: 'Upload Failed', message: err.message });
+    const status = err.statusCode || 400;
+    res.status(status).json({ error: 'Upload Failed', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/upload-chunk - Upload file in 3 MB chunks to bypass Vercel 4.5 MB gateway limit
+ */
+router.post('/upload-chunk', requirePerm('menus:write'), (req, res, next) => {
+  upload.single('chunk')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: 'Bad Request', message: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const { uploadId, chunkIndex, totalChunks, fileName, name, menuId } = req.body || {};
+    const chunkFile = req.file;
+
+    if (!uploadId || chunkIndex === undefined || !totalChunks || !chunkFile) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Missing required chunk parameters.' });
+    }
+
+    const cIndex = parseInt(chunkIndex, 10);
+    const tChunks = parseInt(totalChunks, 10);
+
+    const safeUploadId = String(uploadId).replace(/[^a-zA-Z0-9_-]/g, '');
+    const chunkDir = path.join(DATA_DIR, 'chunks', safeUploadId);
+    await fs.promises.mkdir(chunkDir, { recursive: true });
+
+    // Write chunk part to disk
+    const chunkPath = path.join(chunkDir, `${cIndex}.part`);
+    await fs.promises.writeFile(chunkPath, chunkFile.buffer);
+
+    // Check if all chunks from 0 to tChunks - 1 are present
+    const existingParts = await fs.promises.readdir(chunkDir);
+    if (existingParts.length < tChunks) {
+      return res.json({
+        ok: true,
+        chunkReceived: cIndex,
+        totalReceived: existingParts.length,
+        totalChunks: tChunks
+      });
+    }
+
+    // All chunks received! Verify and assemble in order.
+    const buffers = [];
+    for (let i = 0; i < tChunks; i++) {
+      const partFile = path.join(chunkDir, `${i}.part`);
+      if (!fs.existsSync(partFile)) {
+        return res.json({
+          ok: true,
+          chunkReceived: cIndex,
+          waitingFor: i
+        });
+      }
+      const partBuf = await fs.promises.readFile(partFile);
+      buffers.push(partBuf);
+    }
+
+    const fullBuffer = Buffer.concat(buffers);
+
+    // Clean up temporary chunks
+    try {
+      for (const p of existingParts) {
+        await fs.promises.unlink(path.join(chunkDir, p)).catch(() => {});
+      }
+      await fs.promises.rmdir(chunkDir).catch(() => {});
+    } catch (_) {}
+
+    // Process and save assembled menu file
+    const result = await processAndSaveMenu({
+      fileBuffer: fullBuffer,
+      fileName: fileName || 'menu.zip',
+      customName: name,
+      menuId
+    });
+
+    res.json({
+      ok: true,
+      message: result.isReplace ? 'Menu content replaced successfully' : 'New menu uploaded and published',
+      menu: result.menu
+    });
+  } catch (err) {
+    const status = err.statusCode || 400;
+    res.status(status).json({ error: 'Upload Failed', message: err.message });
   }
 });
 
