@@ -15,38 +15,49 @@ const DUMMY_HASH = bcrypt.hashSync('dummy_password_timing_mitigation_salt_123', 
  */
 async function seedOwnerIfNeeded() {
   const users = await db.getUsers();
-  if (users.length > 0) {
+  if (users.length === 0) {
+    let plainPassword = OWNER_PASSWORD;
+    let generated = false;
+    if (!plainPassword) {
+      plainPassword = crypto.randomBytes(9).toString('base64url');
+      generated = true;
+    }
+
+    const passwordHash = await bcrypt.hash(plainPassword, 10);
+    const ownerUser = {
+      id: `usr_${crypto.randomBytes(8).toString('hex')}`,
+      email: OWNER_EMAIL,
+      passwordHash,
+      role: 'owner',
+      passwordVersion: 1,
+      createdAt: new Date().toISOString()
+    };
+
+    await db.saveUsers([ownerUser]);
+
+    console.log('----------------------------------------------------');
+    console.log('[SEED] Initial owner account created:');
+    console.log(`[SEED] Email:    ${OWNER_EMAIL}`);
+    if (generated) {
+      console.log(`[SEED] Password: ${plainPassword} (Generated - keep this safe!)`);
+    } else {
+      console.log(`[SEED] Password: [set from OWNER_PASSWORD]`);
+    }
+    console.log('----------------------------------------------------');
     return;
   }
 
-  let plainPassword = OWNER_PASSWORD;
-  let generated = false;
-  if (!plainPassword) {
-    plainPassword = crypto.randomBytes(9).toString('base64url');
-    generated = true;
+  // If initial owner account exists with passwordVersion === 1, ensure password matches OWNER_PASSWORD
+  if (users.length > 0 && (users[0].passwordVersion || 1) === 1 && OWNER_PASSWORD) {
+    const isMatch = await bcrypt.compare(OWNER_PASSWORD, users[0].passwordHash);
+    if (!isMatch) {
+      users[0].passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
+      users[0].email = OWNER_EMAIL;
+      users[0].updatedAt = new Date().toISOString();
+      await db.saveUsers(users);
+      console.log(`[SEED] Synchronized owner account with OWNER_PASSWORD (${OWNER_EMAIL})`);
+    }
   }
-
-  const passwordHash = await bcrypt.hash(plainPassword, 10);
-  const ownerUser = {
-    id: `usr_${crypto.randomBytes(8).toString('hex')}`,
-    email: OWNER_EMAIL,
-    passwordHash,
-    role: 'owner',
-    passwordVersion: 1,
-    createdAt: new Date().toISOString()
-  };
-
-  await db.saveUsers([ownerUser]);
-
-  console.log('----------------------------------------------------');
-  console.log('[SEED] Initial owner account created:');
-  console.log(`[SEED] Email:    ${OWNER_EMAIL}`);
-  if (generated) {
-    console.log(`[SEED] Password: ${plainPassword} (Generated - keep this safe!)`);
-  } else {
-    console.log(`[SEED] Password: [set from OWNER_PASSWORD]`);
-  }
-  console.log('----------------------------------------------------');
 }
 
 /**

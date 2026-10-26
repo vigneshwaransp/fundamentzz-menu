@@ -6,7 +6,7 @@ const defaultDataDir = isVercel ? '/tmp/data' : path.join(__dirname, '..', 'data
 const DATA_DIR = process.env.DATA_DIR || defaultDataDir;
 const PUBLIC_URL = (process.env.PUBLIC_URL || `http://localhost:${PORT}`).replace(/\/+$/, '');
 const OWNER_EMAIL = (process.env.OWNER_EMAIL || 'owner@fundamentzz.local').trim().toLowerCase();
-const OWNER_PASSWORD = process.env.OWNER_PASSWORD || null;
+const OWNER_PASSWORD = process.env.OWNER_PASSWORD || 'supersecretownerpassword123';
 
 module.exports = {
   PORT,

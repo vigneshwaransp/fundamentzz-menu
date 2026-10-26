@@ -521,6 +521,14 @@ async function runTests() {
     });
     assert(newLoginRes.status === 200, 'Login with new password succeeds');
 
+    // Restore password to default test password so tests do not mutate local storage permanently
+    const resetUsers = await db.getUsers();
+    if (resetUsers.length > 0) {
+      resetUsers[0].passwordHash = await bcrypt.hash(testPassword, 10);
+      resetUsers[0].passwordVersion = 1;
+      await db.saveUsers(resetUsers);
+    }
+
     console.log('====================================================');
     console.log(`TOTAL TESTS: ${passed + failed} | PASSED: ${passed} | FAILED: ${failed}`);
     console.log('====================================================');
