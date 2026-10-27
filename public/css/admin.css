@@ -727,3 +727,405 @@
   gap: 0.85rem;
   margin-top: 1.75rem;
 }
+
+/* ----------------------------------------------------
+   Menu Card Direct Remove Action
+---------------------------------------------------- */
+.menu-card-meta {
+  margin-top: auto;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+
+.menu-card-counts {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.btn-card-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-card-remove:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(220, 38, 38, 0.25);
+}
+
+/* ----------------------------------------------------
+   Customization Feature & Toggle Slider
+---------------------------------------------------- */
+.customization-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.15rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+.customization-toggle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.customization-toggle-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.customization-toggle-desc {
+  font-size: 0.84rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+/* iOS-style Glass Toggle Slider */
+.switch-toggle {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 30px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  border-radius: 34px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.switch-slider::before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.switch-toggle input:checked + .switch-slider {
+  background-color: var(--color-accent);
+  box-shadow: 0 0 14px rgba(5, 150, 105, 0.35);
+}
+
+.switch-toggle input:checked + .switch-slider::before {
+  transform: translateX(22px);
+}
+
+.customization-controls {
+  transition: opacity 0.25s ease, filter 0.25s ease;
+}
+
+.customization-controls.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  filter: grayscale(40%);
+}
+
+.cust-section-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* Custom Logo Upload & Preview */
+.cust-logo-box {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px dashed rgba(15, 23, 42, 0.15);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cust-logo-preview {
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.cust-logo-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.cust-logo-placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.5rem;
+  line-height: 1.2;
+}
+
+.cust-logo-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.cust-logo-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Theme Palette Chips */
+.cust-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.5rem;
+}
+
+.theme-chip {
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.theme-chip:hover {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
+.theme-chip.is-active {
+  background: #ffffff;
+  border-color: var(--chip-primary, var(--color-accent));
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.1), 0 0 0 2px var(--chip-primary, var(--color-accent));
+}
+
+.theme-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.theme-chip-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Custom Color Pickers */
+.cust-colors-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-md);
+}
+
+.color-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 140px;
+}
+
+.color-picker-item label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  display: block;
+}
+
+.color-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.color-input-circle {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.color-input-circle::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input-circle::-webkit-color-swatch {
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.color-hex-tag {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  background: #ffffff;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Font Style Cards */
+.cust-fonts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.font-option-card {
+  background: rgba(255, 255, 255, 0.7);
+  border: 2px solid rgba(15, 23, 42, 0.08);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.font-option-card:hover {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.2);
+  transform: translateY(-1px);
+}
+
+.font-option-card.is-active {
+  background: #ffffff;
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.1), 0 0 0 2px var(--color-accent);
+}
+
+.font-card-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.font-card-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.font-card-sample {
+  font-size: 0.95rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  color: var(--color-accent);
+}
+
+.font-sample-serif {
+  font-family: 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif;
+}
+
+.font-sample-sans {
+  font-family: 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.font-sample-display {
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-style: italic;
+}
+
+.font-sample-geometric {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Customization Save & Preview Bar */
+.cust-save-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding-top: 1.15rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}

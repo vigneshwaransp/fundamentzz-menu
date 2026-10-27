@@ -5,6 +5,7 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const db = require('../db');
 const { requirePerm } = require('../middleware');
 const { parseUploadedMenuFile, sanitizeString, parsePrice, parseAvailable } = require('../parser');
@@ -120,6 +121,7 @@ router.get('/', async (req, res) => {
         categoryCount: Array.isArray(m.categories) ? m.categories.length : 0,
         imageVersion: m.imageVersion || null,
         coverImage,
+        customization: m.customization || null,
         publicUrl: `${PUBLIC_URL}/m/${m.slug}`,
         createdAt: m.createdAt,
         updatedAt: m.updatedAt
@@ -286,7 +288,7 @@ router.patch('/:id', requirePerm('menus:write'), async (req, res) => {
       return res.status(404).json({ error: 'Not Found', message: 'Menu not found' });
     }
 
-    const { name, tagline, address, phone, currency, footnote, published } = req.body || {};
+    const { name, tagline, address, phone, currency, footnote, published, customization } = req.body || {};
 
     if (name !== undefined) menu.name = sanitizeString(name, 100) || menu.name;
     if (tagline !== undefined) menu.tagline = sanitizeString(tagline, 200);
@@ -295,6 +297,23 @@ router.patch('/:id', requirePerm('menus:write'), async (req, res) => {
     if (currency !== undefined) menu.currency = sanitizeString(currency, 10) || 'INR';
     if (footnote !== undefined) menu.footnote = sanitizeString(footnote, 300);
     if (published !== undefined) menu.published = Boolean(published);
+
+    if (customization !== undefined) {
+      if (customization === null) {
+        menu.customization = null;
+      } else if (typeof customization === 'object') {
+        const cur = menu.customization || {};
+        menu.customization = {
+          enabled: customization.enabled !== undefined ? Boolean(customization.enabled) : (cur.enabled ?? false),
+          logo: customization.logo !== undefined ? (typeof customization.logo === 'string' ? customization.logo.trim() : null) : (cur.logo || null),
+          theme: sanitizeString(customization.theme || cur.theme || 'emerald', 30),
+          primaryColor: sanitizeString(customization.primaryColor || cur.primaryColor || '#059669', 20),
+          secondaryColor: sanitizeString(customization.secondaryColor || cur.secondaryColor || '#10b981', 20),
+          bgGlowColor: sanitizeString(customization.bgGlowColor || cur.bgGlowColor || '#10b981', 40),
+          fontFamily: sanitizeString(customization.fontFamily || cur.fontFamily || 'serif', 30)
+        };
+      }
+    }
 
     menu.updatedAt = new Date().toISOString();
     await db.saveMenu(menu);
@@ -307,6 +326,81 @@ router.patch('/:id', requirePerm('menus:write'), async (req, res) => {
         publicUrl: `${PUBLIC_URL}/m/${menu.slug}`
       }
     });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/:id/logo - Upload & optimize custom restaurant logo
+ */
+router.post('/:id/logo', requirePerm('menus:write'), (req, res, next) => {
+  upload.single('logo')(req, res, (err) => {
+    if (err) return res.status(400).json({ error: 'Bad Request', message: err.message });
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const menu = await db.getMenuById(req.params.id);
+    if (!menu) {
+      return res.status(404).json({ error: 'Not Found', message: 'Menu not found' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'Bad Request', message: 'Please select a logo image to upload.' });
+    }
+
+    const fileBuf = req.file.buffer;
+    const mime = (req.file.mimetype || '').toLowerCase();
+    let logoDataUri = '';
+
+    if (mime === 'image/svg+xml') {
+      const svgText = fileBuf.toString('utf8');
+      logoDataUri = `data:image/svg+xml;utf8,${encodeURIComponent(svgText)}`;
+    } else {
+      const optimizedBuf = await sharp(fileBuf)
+        .rotate()
+        .resize({ width: 360, height: 360, fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 85 })
+        .toBuffer();
+      logoDataUri = `data:image/webp;base64,${optimizedBuf.toString('base64')}`;
+    }
+
+    if (!menu.customization) {
+      menu.customization = { enabled: true, theme: 'emerald', fontFamily: 'serif' };
+    }
+    menu.customization.logo = logoDataUri;
+    menu.updatedAt = new Date().toISOString();
+    await db.saveMenu(menu);
+
+    res.json({
+      ok: true,
+      message: 'Logo uploaded successfully',
+      logo: logoDataUri,
+      customization: menu.customization
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * DELETE /api/menus/:id/logo - Remove restaurant logo
+ */
+router.delete('/:id/logo', requirePerm('menus:write'), async (req, res) => {
+  try {
+    const menu = await db.getMenuById(req.params.id);
+    if (!menu) {
+      return res.status(404).json({ error: 'Not Found', message: 'Menu not found' });
+    }
+
+    if (menu.customization) {
+      menu.customization.logo = null;
+      menu.updatedAt = new Date().toISOString();
+      await db.saveMenu(menu);
+    }
+
+    res.json({ ok: true, message: 'Logo removed successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Server Error', message: err.message });
   }

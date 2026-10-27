@@ -567,8 +567,14 @@
               <h2 class="menu-card-name">${escapeHtml(m.name)}</h2>
               ${m.tagline ? `<p class="menu-card-tagline">${escapeHtml(m.tagline)}</p>` : ''}
               <div class="menu-card-meta">
-                <span>${m.itemCount} ${m.itemCount === 1 ? 'dish' : 'dishes'}</span>
-                <span>${m.categoryCount} ${m.categoryCount === 1 ? 'category' : 'categories'}</span>
+                <div class="menu-card-counts">
+                  <span>${m.itemCount} ${m.itemCount === 1 ? 'dish' : 'dishes'}</span> · 
+                  <span>${m.categoryCount} ${m.categoryCount === 1 ? 'category' : 'categories'}</span>
+                </div>
+                <button type="button" class="btn-card-remove" data-menu-id="${escapeHtml(m.id)}" data-menu-name="${escapeHtml(m.name)}" title="Remove this menu">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  Remove
+                </button>
               </div>
             </div>
           </div>
@@ -580,6 +586,28 @@
       card.addEventListener('click', () => {
         const id = card.getAttribute('data-menu-id');
         navigate(`#menu/${id}`);
+      });
+    });
+
+    Array.from(container.querySelectorAll('.btn-card-remove')).forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-menu-id');
+        const name = btn.getAttribute('data-menu-name') || 'this menu';
+        const ok = await showConfirm(
+          'Remove menu',
+          `Are you sure you want to permanently remove "${name}"? This action cannot be undone.`,
+          'Remove menu'
+        );
+        if (!ok) return;
+
+        const delRes = await apiFetch(`/api/menus/${id}`, { method: 'DELETE' });
+        if (delRes.ok) {
+          showToast(`"${name}" has been removed`);
+          await loadMenusList();
+        } else {
+          showToast(delRes.message || 'Failed to remove menu', 'error');
+        }
       });
     });
   }
@@ -642,6 +670,118 @@
 
               <div class="qr-preview-box" id="qr-preview-box">
                 <p style="font-size: 0.85rem; color: #0e2a1c;">Loading QR...</p>
+              </div>
+            </div>
+
+            <!-- Customization Feature (Logo, Colors, Fonts, Slider Toggle) -->
+            <div class="detail-panel" id="customization-panel">
+              <h2 class="panel-title">🎨 Branding & Customization</h2>
+
+              <!-- Slider to turn ON / OFF -->
+              <div class="customization-toggle-row">
+                <div class="customization-toggle-info">
+                  <span class="customization-toggle-title">
+                    Custom Theme & Logo
+                  </span>
+                  <span class="customization-toggle-desc" id="cust-toggle-desc">
+                    ${(menu.customization && menu.customization.enabled) ? 'Custom branding, colors, and typography active' : 'Using default emerald theme (turn on to enable custom colors & logo)'}
+                  </span>
+                </div>
+                <label class="switch-toggle" title="Turn Customization ON or OFF">
+                  <input type="checkbox" id="cust-enabled-switch" ${(menu.customization && menu.customization.enabled) ? 'checked' : ''}>
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+
+              <div class="customization-controls ${(menu.customization && menu.customization.enabled) ? '' : 'is-disabled'}" id="cust-controls-wrap">
+                <!-- Restaurant Logo -->
+                <div class="cust-section-title">
+                  <span>Restaurant Logo</span>
+                </div>
+                <div class="cust-logo-box">
+                  <div class="cust-logo-preview" id="cust-logo-preview">
+                    ${(menu.customization && menu.customization.logo) ? `
+                      <img src="${escapeHtml(menu.customization.logo)}" alt="Logo" id="cust-logo-img">
+                    ` : `
+                      <div class="cust-logo-placeholder">No logo<br>uploaded</div>
+                    `}
+                  </div>
+                  <div class="cust-logo-controls">
+                    <input type="file" id="cust-logo-file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
+                    <div class="cust-logo-btns">
+                      <button type="button" class="btn btn-secondary btn-sm" id="cust-logo-upload-btn">
+                        ${(menu.customization && menu.customization.logo) ? 'Change logo' : 'Upload logo'}
+                      </button>
+                      <button type="button" class="btn btn-destructive btn-sm" id="cust-logo-remove-btn" ${(menu.customization && menu.customization.logo) ? '' : 'hidden'}>
+                        Remove logo
+                      </button>
+                    </div>
+                    <span style="font-size: 0.76rem; color: var(--color-text-muted);">
+                      PNG, WebP, JPG, or SVG
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Color Theme -->
+                <div class="cust-section-title">
+                  <span>Color Theme</span>
+                </div>
+                <div class="cust-themes-grid" id="cust-themes-grid"></div>
+
+                <!-- Custom Color Pickers -->
+                <div class="cust-colors-row">
+                  <div class="color-picker-item">
+                    <label for="cust-primary-color">Primary Accent</label>
+                    <div class="color-input-wrap">
+                      <input type="color" id="cust-primary-color" class="color-input-circle" value="${escapeHtml(menu.customization?.primaryColor || '#059669')}">
+                      <span class="color-hex-tag" id="cust-primary-hex">${escapeHtml(menu.customization?.primaryColor || '#059669')}</span>
+                    </div>
+                  </div>
+                  <div class="color-picker-item">
+                    <label for="cust-glow-color">Background Glow</label>
+                    <div class="color-input-wrap">
+                      <input type="color" id="cust-glow-color" class="color-input-circle" value="${escapeHtml(menu.customization?.bgGlowColor ? (menu.customization.bgGlowColor.startsWith('#') ? menu.customization.bgGlowColor : '#10b981') : '#10b981')}">
+                      <span class="color-hex-tag" id="cust-glow-hex">${escapeHtml(menu.customization?.bgGlowColor ? (menu.customization.bgGlowColor.startsWith('#') ? menu.customization.bgGlowColor : '#10b981') : '#10b981')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Font Styles -->
+                <div class="cust-section-title">
+                  <span>Typography</span>
+                </div>
+                <div class="cust-fonts-grid" id="cust-fonts-grid">
+                  <div class="font-option-card ${(menu.customization?.fontFamily === 'serif' || !menu.customization?.fontFamily) ? 'is-active' : ''}" data-font="serif">
+                    <span class="font-card-label">Heritage Serif</span>
+                    <span class="font-card-sub">Fraunces · Classic</span>
+                    <div class="font-card-sample font-sample-serif">Gourmet Dosa</div>
+                  </div>
+                  <div class="font-option-card ${menu.customization?.fontFamily === 'sans' ? 'is-active' : ''}" data-font="sans">
+                    <span class="font-card-label">Modern Clean</span>
+                    <span class="font-card-sub">Hind Madurai · Clean</span>
+                    <div class="font-card-sample font-sample-sans">Crispy Vada</div>
+                  </div>
+                  <div class="font-option-card ${menu.customization?.fontFamily === 'display' ? 'is-active' : ''}" data-font="display">
+                    <span class="font-card-label">Luxury Display</span>
+                    <span class="font-card-sub">Fraunces Italic · Bistro</span>
+                    <div class="font-card-sample font-sample-display">Filter Coffee</div>
+                  </div>
+                  <div class="font-option-card ${menu.customization?.fontFamily === 'geometric' ? 'is-active' : ''}" data-font="geometric">
+                    <span class="font-card-label">Contemporary</span>
+                    <span class="font-card-sub">Inter · Minimalist</span>
+                    <div class="font-card-sample font-sample-geometric">Signature Thali</div>
+                  </div>
+                </div>
+
+                <!-- Save & Preview -->
+                <div class="cust-save-bar">
+                  <button type="button" class="btn btn-primary btn-sm" id="save-customization-btn">
+                    Save customization
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="preview-customization-btn">
+                    Preview menu ↗
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -730,6 +870,9 @@
 
     // Setup share panel actions
     setupSharePanel(menu);
+
+    // Setup customization feature (logo, colors, fonts, slider)
+    setupCustomizationPanel(menu);
 
     // Setup replace file upload
     setupReplaceUpload(menu);
@@ -929,6 +1072,214 @@
       } else {
         showToast(res.message || 'Failed to save details', 'error');
       }
+    });
+  }
+
+  function setupCustomizationPanel(menu) {
+    const cust = menu.customization || {};
+    let isEnabled = Boolean(cust.enabled);
+    let selectedTheme = cust.theme || 'emerald';
+    let selectedFont = cust.fontFamily || 'serif';
+
+    const THEME_PALETTES = [
+      { id: 'emerald', name: 'Emerald', primary: '#059669', glow: '#10b981' },
+      { id: 'sapphire', name: 'Sapphire', primary: '#2563eb', glow: '#3b82f6' },
+      { id: 'ruby', name: 'Ruby', primary: '#e11d48', glow: '#f43f5e' },
+      { id: 'amber', name: 'Amber', primary: '#d97706', glow: '#f59e0b' },
+      { id: 'amethyst', name: 'Amethyst', primary: '#7c3aed', glow: '#8b5cf6' },
+      { id: 'obsidian', name: 'Obsidian', primary: '#0f172a', glow: '#64748b' },
+      { id: 'terracotta', name: 'Terracotta', primary: '#ea580c', glow: '#f97316' },
+    ];
+
+    const toggleSwitch = document.getElementById('cust-enabled-switch');
+    const toggleDesc = document.getElementById('cust-toggle-desc');
+    const controlsWrap = document.getElementById('cust-controls-wrap');
+
+    const logoInput = document.getElementById('cust-logo-file-input');
+    const uploadLogoBtn = document.getElementById('cust-logo-upload-btn');
+    const removeLogoBtn = document.getElementById('cust-logo-remove-btn');
+    const logoPreviewBox = document.getElementById('cust-logo-preview');
+
+    const themesGrid = document.getElementById('cust-themes-grid');
+    const primaryInput = document.getElementById('cust-primary-color');
+    const primaryHex = document.getElementById('cust-primary-hex');
+    const glowInput = document.getElementById('cust-glow-color');
+    const glowHex = document.getElementById('cust-glow-hex');
+
+    const fontsGrid = document.getElementById('cust-fonts-grid');
+    const saveBtn = document.getElementById('save-customization-btn');
+    const previewBtn = document.getElementById('preview-customization-btn');
+
+    if (!toggleSwitch || !controlsWrap) return;
+
+    // 1. Slider toggle switch
+    toggleSwitch.addEventListener('change', () => {
+      isEnabled = toggleSwitch.checked;
+      if (isEnabled) {
+        controlsWrap.classList.remove('is-disabled');
+        toggleDesc.textContent = 'Custom branding, colors, and typography active';
+      } else {
+        controlsWrap.classList.add('is-disabled');
+        toggleDesc.textContent = 'Using default emerald theme (turn on to enable custom colors & logo)';
+      }
+    });
+
+    // 2. Logo Upload & Remove
+    uploadLogoBtn?.addEventListener('click', () => {
+      logoInput.click();
+    });
+
+    logoInput?.addEventListener('change', async () => {
+      if (!logoInput.files || logoInput.files.length === 0) return;
+      const file = logoInput.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Logo image must be under 5 MB', 'error');
+        return;
+      }
+
+      uploadLogoBtn.disabled = true;
+      uploadLogoBtn.textContent = 'Uploading...';
+
+      const formData = new FormData();
+      formData.append('logo', file);
+
+      try {
+        const res = await uploadSingleRequest(`/api/menus/${menu.id}/logo`, formData);
+        if (res.ok) {
+          const logoUri = res.data.logo;
+          menu.customization = res.data.customization || menu.customization || {};
+          menu.customization.logo = logoUri;
+
+          logoPreviewBox.innerHTML = `<img src="${escapeHtml(logoUri)}" alt="Logo" id="cust-logo-img">`;
+          removeLogoBtn.hidden = false;
+          uploadLogoBtn.textContent = 'Change logo';
+          showToast('Restaurant logo uploaded successfully');
+        } else {
+          showToast(res.message || 'Failed to upload logo', 'error');
+        }
+      } catch (err) {
+        showToast(err.message || 'Error uploading logo', 'error');
+      } finally {
+        uploadLogoBtn.disabled = false;
+        uploadLogoBtn.textContent = (menu.customization && menu.customization.logo) ? 'Change logo' : 'Upload logo';
+        logoInput.value = '';
+      }
+    });
+
+    removeLogoBtn?.addEventListener('click', async () => {
+      const ok = await showConfirm(
+        'Remove logo',
+        'Are you sure you want to remove the restaurant logo?',
+        'Remove'
+      );
+      if (!ok) return;
+
+      removeLogoBtn.disabled = true;
+      const res = await apiFetch(`/api/menus/${menu.id}/logo`, { method: 'DELETE' });
+      removeLogoBtn.disabled = false;
+
+      if (res.ok) {
+        if (menu.customization) menu.customization.logo = null;
+        logoPreviewBox.innerHTML = `<div class="cust-logo-placeholder">No logo<br>uploaded</div>`;
+        removeLogoBtn.hidden = true;
+        uploadLogoBtn.textContent = 'Upload logo';
+        showToast('Restaurant logo removed');
+      } else {
+        showToast(res.message || 'Failed to remove logo', 'error');
+      }
+    });
+
+    // 3. Theme Palettes
+    if (themesGrid) {
+      themesGrid.innerHTML = THEME_PALETTES.map(p => {
+        const isActive = selectedTheme === p.id;
+        return `
+          <div class="theme-chip ${isActive ? 'is-active' : ''}" data-theme-id="${p.id}" style="--chip-primary: ${p.primary}">
+            <span class="theme-swatch" style="background: ${p.primary};"></span>
+            <span class="theme-chip-name">${escapeHtml(p.name)}</span>
+          </div>
+        `;
+      }).join('');
+
+      themesGrid.querySelectorAll('.theme-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const themeId = chip.getAttribute('data-theme-id');
+          selectedTheme = themeId;
+
+          themesGrid.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('is-active'));
+          chip.classList.add('is-active');
+
+          const palette = THEME_PALETTES.find(p => p.id === themeId);
+          if (palette) {
+            primaryInput.value = palette.primary;
+            primaryHex.textContent = palette.primary;
+            glowInput.value = palette.glow;
+            glowHex.textContent = palette.glow;
+          }
+        });
+      });
+    }
+
+    // Custom Color input listeners
+    primaryInput?.addEventListener('input', () => {
+      primaryHex.textContent = primaryInput.value;
+      selectedTheme = 'custom';
+      themesGrid?.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('is-active'));
+    });
+
+    glowInput?.addEventListener('input', () => {
+      glowHex.textContent = glowInput.value;
+      selectedTheme = 'custom';
+      themesGrid?.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('is-active'));
+    });
+
+    // 4. Font Option Cards
+    fontsGrid?.querySelectorAll('.font-option-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const fontKey = card.getAttribute('data-font');
+        selectedFont = fontKey;
+
+        fontsGrid.querySelectorAll('.font-option-card').forEach(c => c.classList.remove('is-active'));
+        card.classList.add('is-active');
+      });
+    });
+
+    // 5. Save Customization
+    saveBtn?.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const payload = {
+        customization: {
+          enabled: toggleSwitch.checked,
+          logo: (menu.customization && menu.customization.logo) || null,
+          theme: selectedTheme,
+          primaryColor: primaryInput.value,
+          secondaryColor: primaryInput.value,
+          bgGlowColor: glowInput.value,
+          fontFamily: selectedFont
+        }
+      };
+
+      const res = await apiFetch(`/api/menus/${menu.id}`, {
+        method: 'PATCH',
+        body: payload
+      });
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save customization';
+
+      if (res.ok) {
+        menu.customization = res.data.menu.customization;
+        showToast('Customization saved successfully!');
+      } else {
+        showToast(res.message || 'Failed to save customization', 'error');
+      }
+    });
+
+    // 6. Preview Menu in new tab
+    previewBtn?.addEventListener('click', () => {
+      window.open(menu.publicUrl, '_blank');
     });
   }
 

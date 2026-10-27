@@ -25,6 +25,91 @@ function formatPrice(amount, currency = 'INR') {
   }
 }
 
+function hexToRgba(color, alpha = 0.12) {
+  if (!color || typeof color !== 'string') return `rgba(5, 150, 105, ${alpha})`;
+  if (color.startsWith('rgba') || color.startsWith('rgb')) return color;
+  let clean = color.replace('#', '').trim();
+  if (clean.length === 3) clean = clean.split('').map(c => c + c).join('');
+  if (clean.length !== 6) return color;
+  const num = parseInt(clean, 16);
+  if (isNaN(num)) return color;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+const THEME_PRESETS = {
+  emerald: {
+    primary: '#059669',
+    primaryHover: '#047857',
+    primaryBg: 'rgba(5, 150, 105, 0.08)',
+    glow: 'rgba(16, 185, 129, 0.12)',
+    name: 'Emerald Botanical'
+  },
+  sapphire: {
+    primary: '#2563eb',
+    primaryHover: '#1d4ed8',
+    primaryBg: 'rgba(37, 99, 235, 0.08)',
+    glow: 'rgba(59, 130, 246, 0.14)',
+    name: 'Sapphire Ocean'
+  },
+  ruby: {
+    primary: '#e11d48',
+    primaryHover: '#be123c',
+    primaryBg: 'rgba(225, 29, 72, 0.08)',
+    glow: 'rgba(244, 63, 94, 0.14)',
+    name: 'Ruby Velvet'
+  },
+  amber: {
+    primary: '#d97706',
+    primaryHover: '#b45309',
+    primaryBg: 'rgba(217, 119, 6, 0.1)',
+    glow: 'rgba(245, 158, 11, 0.14)',
+    name: 'Amber Saffron'
+  },
+  amethyst: {
+    primary: '#7c3aed',
+    primaryHover: '#6d28d9',
+    primaryBg: 'rgba(124, 58, 237, 0.08)',
+    glow: 'rgba(139, 92, 246, 0.14)',
+    name: 'Amethyst Twilight'
+  },
+  obsidian: {
+    primary: '#0f172a',
+    primaryHover: '#1e293b',
+    primaryBg: 'rgba(15, 23, 42, 0.08)',
+    glow: 'rgba(100, 116, 139, 0.14)',
+    name: 'Obsidian Smoke'
+  },
+  terracotta: {
+    primary: '#ea580c',
+    primaryHover: '#c2410c',
+    primaryBg: 'rgba(234, 88, 12, 0.08)',
+    glow: 'rgba(249, 115, 22, 0.14)',
+    name: 'Terracotta Spice'
+  }
+};
+
+const FONT_PRESETS = {
+  serif: {
+    heading: "'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
+    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+  sans: {
+    heading: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+  display: {
+    heading: "'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
+    body: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  },
+  geometric: {
+    heading: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+  }
+};
+
 /**
  * Render the complete server-rendered Public Menu HTML
  */
@@ -33,16 +118,54 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   const dishesWithImages = (menu.items || []).filter(it => it.image);
   const firstDishWithImage = dishesWithImages[0];
 
-  // Open Graph Image URL
-  const ogImage = firstDishWithImage && menu.imageVersion
-    ? `${PUBLIC_URL}/media/${menu.slug}/${menu.imageVersion}/${firstDishWithImage.id}.webp`
-    : `${PUBLIC_URL}/img/og-fallback.png`;
+  const cust = menu.customization;
+  const isCustomized = Boolean(cust && cust.enabled);
+
+  // Open Graph Image URL (custom logo preferred if present and customized)
+  const ogImage = (isCustomized && cust.logo)
+    ? cust.logo
+    : (firstDishWithImage && menu.imageVersion
+      ? `${PUBLIC_URL}/media/${menu.slug}/${menu.imageVersion}/${firstDishWithImage.id}.webp`
+      : `${PUBLIC_URL}/img/og-fallback.png`);
 
   const ogTitle = `${menu.name} · Digital Menu`;
   const ogDescription = menu.tagline || (menu.address ? `${menu.name} located at ${menu.address}` : `Explore the digital menu for ${menu.name}`);
 
   // Up to 5 overlapping dish plates for the hero row
   const heroPlates = dishesWithImages.slice(0, 5);
+
+  // Custom theme overrides
+  let customStyleTag = '';
+  if (isCustomized) {
+    const themeKey = cust.theme || 'emerald';
+    const preset = THEME_PRESETS[themeKey] || THEME_PRESETS.emerald;
+    const primary = cust.primaryColor || preset.primary;
+    const primaryHover = preset.primaryHover || primary;
+    const primaryBg = cust.primaryColor ? hexToRgba(primary, 0.08) : (preset.primaryBg || 'rgba(5, 150, 105, 0.08)');
+    const rawGlow = cust.bgGlowColor || preset.glow;
+    const glow = hexToRgba(rawGlow, 0.14);
+    const fontKey = cust.fontFamily || 'serif';
+    const fonts = FONT_PRESETS[fontKey] || FONT_PRESETS.serif;
+
+    customStyleTag = `
+  <style id="custom-menu-theme">
+    :root {
+      --color-accent: ${escapeHtml(primary)};
+      --color-accent-hover: ${escapeHtml(primaryHover)};
+      --color-accent-bg: ${escapeHtml(primaryBg)};
+      --font-heading: ${fonts.heading};
+      --font-body: ${fonts.body};
+    }
+    body.public-menu-body {
+      background-image: 
+        radial-gradient(at 15% 15%, ${escapeHtml(glow)} 0px, transparent 42%),
+        radial-gradient(at 85% 10%, rgba(245, 158, 11, 0.08) 0px, transparent 42%),
+        radial-gradient(at 50% 85%, ${escapeHtml(glow)} 0px, transparent 48%),
+        radial-gradient(at 80% 85%, ${escapeHtml(glow)} 0px, transparent 45%),
+        radial-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+    }
+  </style>`;
+  }
 
   // Group items by category
   const categories = menu.categories || [];
@@ -78,7 +201,7 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <!-- Self-hosted Fonts and Stylesheets -->
   <link rel="stylesheet" href="/fonts/fonts.css?v=2.2">
   <link rel="stylesheet" href="/css/base.css?v=2.2">
-  <link rel="stylesheet" href="/css/public.css?v=2.2">
+  <link rel="stylesheet" href="/css/public.css?v=2.2">${customStyleTag}
 </head>
 <body class="public-menu-body">
   ${isPreview ? `
@@ -93,19 +216,27 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <!-- Header & Hero Section -->
   <header class="menu-hero">
     <div class="menu-container hero-container">
-      ${heroPlates.length > 0 ? `
-        <div class="hero-plates-row" aria-hidden="true">
-          ${heroPlates.map((dish, i) => `
-            <div class="hero-plate" style="--stagger-delay: ${(i * 0.08).toFixed(2)}s">
-              <img src="${escapeHtml(dish.thumbData || `/media/${menu.slug}/${menu.imageVersion}/${dish.id}-thumb.webp`)}"
-                   alt=""
-                   loading="eager"
-                   width="72"
-                   height="72">
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
+      <div class="hero-brand-wrap">
+        ${(isCustomized && cust.logo) ? `
+          <div class="hero-logo-badge">
+            <img src="${escapeHtml(cust.logo)}" alt="${escapeHtml(menu.name)} logo" class="hero-logo-img">
+          </div>
+        ` : ''}
+
+        ${heroPlates.length > 0 ? `
+          <div class="hero-plates-row" aria-hidden="true">
+            ${heroPlates.map((dish, i) => `
+              <div class="hero-plate" style="--stagger-delay: ${(i * 0.08).toFixed(2)}s">
+                <img src="${escapeHtml(dish.thumbData || `/media/${menu.slug}/${menu.imageVersion}/${dish.id}-thumb.webp`)}"
+                     alt=""
+                     loading="eager"
+                     width="72"
+                     height="72">
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
 
       <h1 class="restaurant-name">${escapeHtml(menu.name)}</h1>
       

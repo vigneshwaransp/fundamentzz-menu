@@ -542,7 +542,136 @@ async function runTests() {
     assert(qrRes.headers['content-disposition']?.includes('attachment'), 'Content-Disposition attachment set for download');
     assert(qrRes.body.includes('<svg'), 'QR response contains valid SVG');
 
-    // 20. Changing password invalidates old sessions
+    // 20. Customization & Logo Branding
+    console.log('Testing Menu Customization & Logo Branding...');
+    // Create a 1x1 transparent PNG buffer for logo test
+    const dummyPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+    const logoBoundary = '----WebKitFormBoundaryLogo' + Math.random().toString(36).slice(2);
+    const logoMultipart = Buffer.concat([
+      Buffer.from(`--${logoBoundary}\r\nContent-Disposition: form-data; name="logo"; filename="test-logo.png"\r\nContent-Type: image/png\r\n\r\n`),
+      dummyPng,
+      Buffer.from(`\r\n--${logoBoundary}--\r\n`)
+    ]);
+
+    const logoUploadRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}/logo`,
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${logoBoundary}`,
+        'Content-Length': logoMultipart.length,
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, logoMultipart);
+    assert(logoUploadRes.status === 200, 'POST /api/menus/:id/logo returns 200 OK');
+    assert(logoUploadRes.json?.ok === true, 'Logo upload response ok');
+    assert(logoUploadRes.json?.logo?.startsWith('data:image/webp;base64,'), 'Logo stored as WebP Data URI');
+
+    // Update customization settings with custom colors and font
+    const patchCustRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}`,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, {
+      customization: {
+        enabled: true,
+        theme: 'sapphire',
+        primaryColor: '#2563eb',
+        bgGlowColor: '#3b82f6',
+        fontFamily: 'display'
+      }
+    });
+    assert(patchCustRes.status === 200, 'PATCH /api/menus/:id with customization returns 200 OK');
+    assert(patchCustRes.json?.menu?.customization?.enabled === true, 'Customization enabled is true');
+    assert(patchCustRes.json?.menu?.customization?.theme === 'sapphire', 'Customization theme is sapphire');
+
+    // Verify Public HTML renders custom theme and logo
+    const custPublicRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/m/${newSlug}`,
+      method: 'GET'
+    });
+    assert(custPublicRes.status === 200, 'Customized menu GET returns 200 OK');
+    assert(custPublicRes.body.includes('id="custom-menu-theme"'), 'Public menu includes custom theme style tag');
+    assert(custPublicRes.body.includes('--color-accent: #2563eb'), 'Public menu includes custom accent color');
+    assert(custPublicRes.body.includes('class="hero-logo-badge"'), 'Public menu renders hero logo badge');
+
+    // Test slider toggle OFF: customization disabled
+    const toggleOffRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}`,
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, {
+      customization: {
+        enabled: false
+      }
+    });
+    assert(toggleOffRes.status === 200, 'Toggle slider OFF returns 200 OK');
+    assert(toggleOffRes.json?.menu?.customization?.enabled === false, 'Customization enabled is false');
+
+    const toggleOffPublic = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/m/${newSlug}`,
+      method: 'GET'
+    });
+    assert(!toggleOffPublic.body.includes('id="custom-menu-theme"'), 'When toggled OFF, custom style tag is omitted');
+    assert(!toggleOffPublic.body.includes('class="hero-logo-badge"'), 'When toggled OFF, hero logo badge is omitted');
+
+    // Test DELETE logo
+    const delLogoRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}/logo`,
+      method: 'DELETE',
+      headers: {
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    });
+    assert(delLogoRes.status === 200, 'DELETE /api/menus/:id/logo returns 200 OK');
+
+    // Test DELETE menu
+    console.log('Testing Menu Deletion / Removal...');
+    const delMenuRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}`,
+      method: 'DELETE',
+      headers: {
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    });
+    assert(delMenuRes.status === 200, 'DELETE /api/menus/:id returns 200 OK');
+
+    const verifyDeleted = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${menuId}`,
+      method: 'GET',
+      headers: {
+        'Cookie': validSessionCookie
+      }
+    });
+    assert(verifyDeleted.status === 404, 'Deleted menu returns 404 Not Found');
+
+    // 21. Changing password invalidates old sessions
     console.log('Testing password change and session invalidation...');
     const changePassRes = await request({
       hostname: '127.0.0.1',
