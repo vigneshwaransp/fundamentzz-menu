@@ -604,6 +604,8 @@ async function runTests() {
     assert(custPublicRes.body.includes('id="custom-menu-theme"'), 'Public menu includes custom theme style tag');
     assert(custPublicRes.body.includes('--color-accent: #2563eb'), 'Public menu includes custom accent color');
     assert(custPublicRes.body.includes('class="hero-logo-badge"'), 'Public menu renders hero logo badge');
+    assert(custPublicRes.body.includes("Cinzel"), 'Public menu includes custom font family Cinzel');
+    assert(custPublicRes.body.includes('fonts.googleapis.com'), 'Public menu loads Google Fonts stylesheet');
 
     // Test slider toggle OFF: customization disabled
     const toggleOffRes = await request({

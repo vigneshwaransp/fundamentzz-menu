@@ -93,20 +93,32 @@ const THEME_PRESETS = {
 
 const FONT_PRESETS = {
   serif: {
-    heading: "'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
-    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    heading: "'Playfair Display', 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
+    body: "'Playfair Display', 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
+    price: "'Playfair Display', 'Fraunces Variable', serif",
+    letterSpacing: '-0.01em',
+    name: 'Heritage Serif'
   },
   sans: {
-    heading: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    heading: "'Poppins', 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    body: "'Poppins', 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    price: "'Poppins', 'Hind Madurai', sans-serif",
+    letterSpacing: '0',
+    name: 'Modern Clean'
   },
   display: {
-    heading: "'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
-    body: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    heading: "'Cinzel', 'Cormorant Garamond', 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif",
+    body: "'Cormorant Garamond', 'Hind Madurai', Georgia, serif",
+    price: "'Cinzel', 'Hind Madurai', serif",
+    letterSpacing: '0.04em',
+    name: 'Luxury Display'
   },
   geometric: {
-    heading: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    body: "'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+    heading: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    body: "'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    price: "'Plus Jakarta Sans', 'Inter', sans-serif",
+    letterSpacing: '-0.02em',
+    name: 'Contemporary'
   }
 };
 
@@ -155,14 +167,43 @@ function renderPublicMenuHtml(menu, isPreview = false) {
       --color-accent-bg: ${escapeHtml(primaryBg)};
       --font-heading: ${fonts.heading};
       --font-body: ${fonts.body};
+      --font-price: ${fonts.price || fonts.body};
     }
     body.public-menu-body {
+      font-family: var(--font-body) !important;
       background-image: 
         radial-gradient(at 15% 15%, ${escapeHtml(glow)} 0px, transparent 42%),
         radial-gradient(at 85% 10%, rgba(245, 158, 11, 0.08) 0px, transparent 42%),
         radial-gradient(at 50% 85%, ${escapeHtml(glow)} 0px, transparent 48%),
         radial-gradient(at 80% 85%, ${escapeHtml(glow)} 0px, transparent 45%),
         radial-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+    }
+    body.public-menu-body h1,
+    body.public-menu-body h2,
+    body.public-menu-body h3,
+    body.public-menu-body h4,
+    body.public-menu-body .restaurant-name,
+    body.public-menu-body .category-heading,
+    body.public-menu-body .dish-name,
+    body.public-menu-body .kolam-letter {
+      font-family: var(--font-heading) !important;
+      ${fonts.letterSpacing ? `letter-spacing: ${fonts.letterSpacing};` : ''}
+    }
+    body.public-menu-body p,
+    body.public-menu-body span,
+    body.public-menu-body input,
+    body.public-menu-body button,
+    body.public-menu-body .restaurant-tagline,
+    body.public-menu-body .meta-item,
+    body.public-menu-body .dish-description,
+    body.public-menu-body .category-chip,
+    body.public-menu-body .search-input,
+    body.public-menu-body .filter-chip {
+      font-family: var(--font-body) !important;
+    }
+    body.public-menu-body .dish-price,
+    body.public-menu-body .lightbox-price {
+      font-family: var(--font-price) !important;
     }
   </style>`;
   }
@@ -198,10 +239,15 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
   <meta name="description" content="${escapeHtml(ogDescription)}">
 
+  <!-- Google Fonts Preconnect & Stylesheet -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Plus+Jakarta+Sans:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- Self-hosted Fonts and Stylesheets -->
-  <link rel="stylesheet" href="/fonts/fonts.css?v=2.2">
-  <link rel="stylesheet" href="/css/base.css?v=2.2">
-  <link rel="stylesheet" href="/css/public.css?v=2.2">${customStyleTag}
+  <link rel="stylesheet" href="/fonts/fonts.css?v=2.3">
+  <link rel="stylesheet" href="/css/base.css?v=2.3">
+  <link rel="stylesheet" href="/css/public.css?v=2.3">${customStyleTag}
 </head>
 <body class="public-menu-body">
   ${isPreview ? `

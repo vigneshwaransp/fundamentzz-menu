@@ -1103,20 +1103,28 @@
 }
 
 .font-sample-serif {
-  font-family: 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif;
+  font-family: 'Playfair Display', 'Fraunces Variable', 'Noto Serif Tamil', Georgia, serif;
+  font-weight: 700;
+  font-size: 1.05rem;
 }
 
 .font-sample-sans {
-  font-family: 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Poppins', 'Hind Madurai', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
 }
 
 .font-sample-display {
-  font-family: 'Fraunces Variable', Georgia, serif;
-  font-style: italic;
+  font-family: 'Cinzel', 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
 }
 
 .font-sample-geometric {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  font-size: 1.05rem;
   letter-spacing: -0.02em;
 }
 

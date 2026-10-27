@@ -753,23 +753,23 @@
                 <div class="cust-fonts-grid" id="cust-fonts-grid">
                   <div class="font-option-card ${(menu.customization?.fontFamily === 'serif' || !menu.customization?.fontFamily) ? 'is-active' : ''}" data-font="serif">
                     <span class="font-card-label">Heritage Serif</span>
-                    <span class="font-card-sub">Fraunces · Classic</span>
-                    <div class="font-card-sample font-sample-serif">Gourmet Dosa</div>
+                    <span class="font-card-sub">Playfair Display · Elegant</span>
+                    <div class="font-card-sample font-sample-serif">Gourmet Dosa · ₹180</div>
                   </div>
                   <div class="font-option-card ${menu.customization?.fontFamily === 'sans' ? 'is-active' : ''}" data-font="sans">
                     <span class="font-card-label">Modern Clean</span>
-                    <span class="font-card-sub">Hind Madurai · Clean</span>
-                    <div class="font-card-sample font-sample-sans">Crispy Vada</div>
+                    <span class="font-card-sub">Poppins · Crisp & Rounded</span>
+                    <div class="font-card-sample font-sample-sans">Crispy Vada · ₹80</div>
                   </div>
                   <div class="font-option-card ${menu.customization?.fontFamily === 'display' ? 'is-active' : ''}" data-font="display">
                     <span class="font-card-label">Luxury Display</span>
-                    <span class="font-card-sub">Fraunces Italic · Bistro</span>
-                    <div class="font-card-sample font-sample-display">Filter Coffee</div>
+                    <span class="font-card-sub">Cinzel · Fine Dining</span>
+                    <div class="font-card-sample font-sample-display">FILTER COFFEE</div>
                   </div>
                   <div class="font-option-card ${menu.customization?.fontFamily === 'geometric' ? 'is-active' : ''}" data-font="geometric">
                     <span class="font-card-label">Contemporary</span>
-                    <span class="font-card-sub">Inter · Minimalist</span>
-                    <div class="font-card-sample font-sample-geometric">Signature Thali</div>
+                    <span class="font-card-sub">Plus Jakarta · Minimalist</span>
+                    <div class="font-card-sample font-sample-geometric">Signature Thali · ₹240</div>
                   </div>
                 </div>
 
@@ -1216,6 +1216,12 @@
             glowInput.value = palette.glow;
             glowHex.textContent = palette.glow;
           }
+
+          if (!toggleSwitch.checked) {
+            toggleSwitch.checked = true;
+            controlsWrap.classList.remove('is-disabled');
+            toggleDesc.textContent = 'Custom branding, colors, and typography active';
+          }
         });
       });
     }
@@ -1225,12 +1231,22 @@
       primaryHex.textContent = primaryInput.value;
       selectedTheme = 'custom';
       themesGrid?.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('is-active'));
+      if (!toggleSwitch.checked) {
+        toggleSwitch.checked = true;
+        controlsWrap.classList.remove('is-disabled');
+        toggleDesc.textContent = 'Custom branding, colors, and typography active';
+      }
     });
 
     glowInput?.addEventListener('input', () => {
       glowHex.textContent = glowInput.value;
       selectedTheme = 'custom';
       themesGrid?.querySelectorAll('.theme-chip').forEach(c => c.classList.remove('is-active'));
+      if (!toggleSwitch.checked) {
+        toggleSwitch.checked = true;
+        controlsWrap.classList.remove('is-disabled');
+        toggleDesc.textContent = 'Custom branding, colors, and typography active';
+      }
     });
 
     // 4. Font Option Cards
@@ -1241,6 +1257,12 @@
 
         fontsGrid.querySelectorAll('.font-option-card').forEach(c => c.classList.remove('is-active'));
         card.classList.add('is-active');
+
+        if (!toggleSwitch.checked) {
+          toggleSwitch.checked = true;
+          controlsWrap.classList.remove('is-disabled');
+          toggleDesc.textContent = 'Custom branding, colors, and typography active';
+        }
       });
     });
 
@@ -1271,7 +1293,7 @@
 
       if (res.ok) {
         menu.customization = res.data.menu.customization;
-        showToast('Customization saved successfully!');
+        showToast('Customization and typography saved successfully!');
       } else {
         showToast(res.message || 'Failed to save customization', 'error');
       }

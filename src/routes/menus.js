@@ -73,6 +73,7 @@ async function processAndSaveMenu({ fileBuffer, fileName, customName, menuId }) 
     imageVersion: newImageVersion,
     categories,
     items,
+    customization: existingMenu?.customization || null,
     createdAt: existingMenu ? existingMenu.createdAt : now,
     updatedAt: now
   };
