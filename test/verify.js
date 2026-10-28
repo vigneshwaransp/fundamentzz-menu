@@ -50,8 +50,8 @@ async function runTests() {
   console.log('--- STARTING COMPREHENSIVE VERIFICATION SUITE ---');
   
   const bcrypt = require('bcryptjs');
-  const testEmail = 'owner@fundamentzz.local';
-  const testPassword = 'supersecretownerpassword123';
+  const testEmail = 'kavin@fundamentzz.com';
+  const testPassword = 'kavin@123';
 
   server = await startServer();
   const port = server.address().port;
@@ -161,7 +161,7 @@ async function runTests() {
         'Content-Type': 'application/json',
         'X-Requested-With': 'dm'
       }
-    }, { email: testEmail, password: 'supersecretownerpassword123' });
+    }, { email: testEmail, password: testPassword });
     assert(loginRes.status === 200, 'Login with correct credentials returns 200 OK');
     
     const cookie = parseSetCookie(loginRes.headers);
@@ -686,7 +686,7 @@ async function runTests() {
         'X-Requested-With': 'dm'
       }
     }, {
-      oldPassword: 'supersecretownerpassword123',
+      oldPassword: testPassword,
       newPassword: 'brandnewownerpassword456'
     });
     assert(changePassRes.status === 200, 'POST /api/auth/password returns 200 OK');

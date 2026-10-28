@@ -324,26 +324,14 @@
             <p class="login-subtitle">Restaurant Owner Sign In</p>
           </div>
 
-          <div class="credentials-hint-card">
-            <div class="hint-header">
-              <span>🔑</span>
-              <span>Default Owner Account</span>
-            </div>
-            <div class="hint-body">
-              <div>Email: <strong>owner@fundamentzz.local</strong></div>
-              <div>Password: <strong>supersecretownerpassword123</strong></div>
-            </div>
-            <button type="button" class="btn-fill-demo" id="fill-credentials-btn">Auto-fill credentials</button>
-          </div>
-
           <form id="login-form">
             <div class="form-group">
               <label class="form-label" for="login-email">Email address</label>
-              <input type="email" id="login-email" class="form-input" required autocomplete="username" value="owner@fundamentzz.local">
+              <input type="email" id="login-email" class="form-input" required autocomplete="username" placeholder="name@example.com">
             </div>
             <div class="form-group">
               <label class="form-label" for="login-password">Password</label>
-              <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="supersecretownerpassword123">
+              <input type="password" id="login-password" class="form-input" required autocomplete="current-password" placeholder="••••••••">
             </div>
             <button type="submit" class="btn btn-primary" id="login-submit-btn" style="width: 100%; margin-top: 1rem;">
               Sign in
@@ -355,15 +343,6 @@
 
     const form = document.getElementById('login-form');
     const submitBtn = document.getElementById('login-submit-btn');
-    const fillBtn = document.getElementById('fill-credentials-btn');
-
-    if (fillBtn) {
-      fillBtn.addEventListener('click', () => {
-        document.getElementById('login-email').value = 'owner@fundamentzz.local';
-        document.getElementById('login-password').value = 'supersecretownerpassword123';
-        showToast('Credentials filled. Click "Sign in" to continue.', 'info');
-      });
-    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();

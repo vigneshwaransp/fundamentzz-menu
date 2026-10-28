@@ -36,26 +36,22 @@ async function seedOwnerIfNeeded() {
     await db.saveUsers([ownerUser]);
 
     console.log('----------------------------------------------------');
-    console.log('[SEED] Initial owner account created:');
-    console.log(`[SEED] Email:    ${OWNER_EMAIL}`);
-    if (generated) {
-      console.log(`[SEED] Password: ${plainPassword} (Generated - keep this safe!)`);
-    } else {
-      console.log(`[SEED] Password: [set from OWNER_PASSWORD]`);
-    }
+    console.log('[SEED] Initial owner account created.');
     console.log('----------------------------------------------------');
     return;
   }
 
-  // If initial owner account exists with passwordVersion === 1, ensure password matches OWNER_PASSWORD
-  if (users.length > 0 && (users[0].passwordVersion || 1) === 1 && OWNER_PASSWORD) {
-    const isMatch = await bcrypt.compare(OWNER_PASSWORD, users[0].passwordHash);
-    if (!isMatch) {
-      users[0].passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
-      users[0].email = OWNER_EMAIL;
-      users[0].updatedAt = new Date().toISOString();
+  // Ensure owner account matches configured OWNER_EMAIL and OWNER_PASSWORD
+  const owner = users.find(u => u.role === 'owner') || users[0];
+  if (owner && OWNER_PASSWORD) {
+    const isMatch = await bcrypt.compare(OWNER_PASSWORD, owner.passwordHash);
+    if (!isMatch || owner.email.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
+      owner.email = OWNER_EMAIL;
+      owner.passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
+      owner.passwordVersion = (owner.passwordVersion || 1) + 1;
+      owner.updatedAt = new Date().toISOString();
       await db.saveUsers(users);
-      console.log(`[SEED] Synchronized owner account with OWNER_PASSWORD (${OWNER_EMAIL})`);
+      console.log(`[SEED] Synchronized owner account to ${OWNER_EMAIL}`);
     }
   }
 }

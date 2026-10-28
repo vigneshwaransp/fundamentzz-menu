@@ -135,56 +135,6 @@
   color: var(--color-text-muted);
 }
 
-/* Credentials Quick Hint Card */
-.credentials-hint-card {
-  background: rgba(248, 250, 252, 0.85);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: var(--radius-md);
-  padding: 0.9rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.84rem;
-}
-
-.hint-header {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-weight: 600;
-  color: var(--color-text);
-  margin-bottom: 0.4rem;
-}
-
-.hint-body {
-  color: var(--color-text-muted);
-  line-height: 1.45;
-  margin-bottom: 0.65rem;
-}
-
-.hint-body strong {
-  color: var(--color-accent);
-  font-family: monospace;
-  font-size: 0.88rem;
-}
-
-.btn-fill-demo {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  color: var(--color-text);
-  font-size: 0.78rem;
-  padding: 0.3rem 0.65rem;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  width: 100%;
-  font-weight: 500;
-  transition: all 0.15s ease;
-}
-
-.btn-fill-demo:hover {
-  background: #ffffff;
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-
 /* ----------------------------------------------------
    Dashboard Grid
 ---------------------------------------------------- */

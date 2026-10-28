@@ -13,8 +13,8 @@ async function runBrowserTests() {
     fs.mkdirSync(screenshotsDir, { recursive: true });
   }
 
-  const testEmail = 'owner@fundamentzz.local';
-  const testPassword = 'supersecretownerpassword123';
+  const testEmail = 'kavin@fundamentzz.com';
+  const testPassword = 'kavin@123';
 
   // Start test server on dynamic port
   const server = await startServer();
