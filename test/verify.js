@@ -673,7 +673,90 @@ async function runTests() {
     });
     assert(verifyDeleted.status === 404, 'Deleted menu returns 404 Not Found');
 
-    // 21. Changing password invalidates old sessions
+    // 21. Multi-Tier Storage, Backup & Vault Sync
+    console.log('Testing Multi-Tier Storage, Backup & Vault Sync...');
+    const storageStatusRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/storage/status',
+      method: 'GET',
+      headers: {
+        'Cookie': validSessionCookie
+      }
+    });
+    assert(storageStatusRes.status === 200, 'GET /api/menus/storage/status returns 200 OK');
+    assert(storageStatusRes.json?.ok === true, 'Storage status response ok');
+    assert(storageStatusRes.json?.status?.displayName, 'Storage provider displayName present');
+
+    // Test Export Backup
+    const backupRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/export/backup',
+      method: 'GET',
+      headers: {
+        'Cookie': validSessionCookie
+      }
+    });
+    assert(backupRes.status === 200, 'GET /api/menus/export/backup returns 200 OK');
+    assert(backupRes.headers['content-disposition']?.includes('attachment'), 'Backup content-disposition set for download');
+    assert(Array.isArray(backupRes.json?.menus), 'Backup payload contains menus array');
+
+    // Test Import Restore
+    const sampleRestoreMenu = {
+      id: 'menu_test_restore_' + Math.random().toString(36).slice(2, 8),
+      name: 'Restored Test Kitchen',
+      slug: 'restored-test-kitchen',
+      published: true,
+      items: [
+        { id: 'itm_res_1', name: 'Special Biryani', price: 180, categoryId: 'cat_1' }
+      ],
+      categories: [
+        { id: 'cat_1', name: 'Main Course' }
+      ]
+    };
+    const restoreRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/import/restore',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, JSON.stringify({ menus: [sampleRestoreMenu] }));
+    assert(restoreRes.status === 200, 'POST /api/menus/import/restore returns 200 OK');
+    assert(restoreRes.json?.restoredCount === 1, 'Restored count equals 1');
+
+    // Test Vault Sync
+    const vaultSyncRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/sync/vault',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, JSON.stringify({ menus: [sampleRestoreMenu] }));
+    assert(vaultSyncRes.status === 200, 'POST /api/menus/sync/vault returns 200 OK');
+    assert(vaultSyncRes.json?.ok === true, 'Vault sync response ok');
+
+    // Clean up restored menu
+    await request({
+      hostname: '127.0.0.1',
+      port,
+      path: `/api/menus/${sampleRestoreMenu.id}`,
+      method: 'DELETE',
+      headers: {
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    });
+
+    // 22. Changing password invalidates old sessions
     console.log('Testing password change and session invalidation...');
     const changePassRes = await request({
       hostname: '127.0.0.1',

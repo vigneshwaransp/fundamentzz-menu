@@ -135,6 +135,112 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/menus/storage/status - Get active storage provider and health
+ */
+router.get('/storage/status', async (req, res) => {
+  try {
+    const status = db.getStorageStatus();
+    res.json({ ok: true, status });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * GET /api/menus/export/backup - Export all menus as a complete JSON backup
+ */
+router.get('/export/backup', async (req, res) => {
+  try {
+    const menus = await db.listMenus();
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      generator: 'Fundamentzz Digital Menu Vault',
+      count: menus.length,
+      menus
+    };
+    const jsonStr = JSON.stringify(backup, null, 2);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="fundamentzz-menus-backup-${dateStr}.json"`);
+    res.send(jsonStr);
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/import/restore - Restore menus from backup payload
+ */
+router.post('/import/restore', requirePerm('menus:write'), async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const menusToRestore = Array.isArray(payload.menus)
+      ? payload.menus
+      : (payload.id ? [payload] : []);
+
+    if (menusToRestore.length === 0) {
+      return res.status(400).json({ error: 'Bad Request', message: 'No valid menus found in backup payload.' });
+    }
+
+    let restored = 0;
+    for (const m of menusToRestore) {
+      if (m && m.id && m.name) {
+        if (!m.slug) m.slug = generateSlug(m.name);
+        m.updatedAt = new Date().toISOString();
+        await db.saveMenu(m);
+        restored++;
+      }
+    }
+
+    res.json({
+      ok: true,
+      restoredCount: restored,
+      message: `Successfully restored and persisted ${restored} menus.`
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/sync/vault - Two-way sync between browser admin vault and server
+ */
+router.post('/sync/vault', requirePerm('menus:write'), async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const clientMenus = Array.isArray(payload.menus) ? payload.menus : [];
+    if (clientMenus.length === 0) {
+      const current = await db.listMenus();
+      return res.json({ ok: true, syncedCount: 0, totalMenus: current.length });
+    }
+
+    const currentMenus = await db.listMenus();
+    const currentMap = new Map(currentMenus.map(m => [m.id, m]));
+
+    let synced = 0;
+    for (const cm of clientMenus) {
+      if (!cm || !cm.id || !cm.name) continue;
+      const existing = currentMap.get(cm.id);
+      if (!existing || (cm.updatedAt && new Date(cm.updatedAt) > new Date(existing.updatedAt || 0))) {
+        await db.saveMenu(cm);
+        currentMap.set(cm.id, cm);
+        synced++;
+      }
+    }
+
+    res.json({
+      ok: true,
+      syncedCount: synced,
+      totalMenus: currentMap.size,
+      message: synced > 0 ? `Synced ${synced} menus from Admin Vault.` : 'All menus up to date.'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
  * GET /api/menus/:id - Get single menu
  */
 router.get('/:id', async (req, res) => {

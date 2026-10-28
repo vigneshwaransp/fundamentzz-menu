@@ -22,6 +22,94 @@
   const confirmModalMessage = document.getElementById('confirm-modal-message');
   const confirmModalOk = document.getElementById('confirm-modal-ok');
   const confirmModalCancel = document.getElementById('confirm-modal-cancel');
+  const headerStorageBtn = document.getElementById('header-storage-btn');
+  const headerStorageText = document.getElementById('header-storage-text');
+  const storageModal = document.getElementById('storage-modal');
+  const storageModalClose = document.getElementById('storage-modal-close');
+  const modalRestoreBtn = document.getElementById('modal-restore-btn');
+  const modalSyncVaultBtn = document.getElementById('modal-sync-vault-btn');
+
+  // ----------------------------------------------------
+  // Admin Vault & Multi-Tier Storage System
+  // ----------------------------------------------------
+  const VAULT_STORAGE_KEY = 'fundamentzz_vault_menus';
+
+  function getVaultMenus() {
+    try {
+      const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveToVault(menus) {
+    if (!Array.isArray(menus)) return;
+    try {
+      localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(menus));
+    } catch (_) {}
+  }
+
+  async function updateStorageStatusPill() {
+    try {
+      const res = await apiFetch('/api/menus/storage/status');
+      if (res.ok && res.data.status) {
+        const s = res.data.status;
+        if (headerStorageText) {
+          headerStorageText.textContent = s.isCloudPersistent ? 'Cloud Active' : 'Vault Active';
+        }
+        const dot = headerStorageBtn?.querySelector('.storage-dot');
+        if (dot) {
+          dot.className = s.isCloudPersistent ? 'storage-dot' : 'storage-dot is-local';
+        }
+        const quickLabel = document.getElementById('storage-quick-label');
+        if (quickLabel) {
+          quickLabel.textContent = s.displayName;
+        }
+      }
+    } catch (_) {}
+  }
+
+  async function openStorageModal() {
+    if (!storageModal) return;
+
+    const engineNameEl = document.getElementById('storage-engine-name');
+    const engineBadgeEl = document.getElementById('storage-engine-badge');
+    const menuCountEl = document.getElementById('storage-menu-count');
+    const summaryEl = document.getElementById('cloud-setup-summary');
+    const stepsEl = document.getElementById('cloud-setup-steps');
+
+    try {
+      const res = await apiFetch('/api/menus/storage/status');
+      if (res.ok && res.data.status) {
+        const s = res.data.status;
+        if (engineNameEl) engineNameEl.textContent = s.displayName;
+        if (engineBadgeEl) {
+          engineBadgeEl.textContent = s.isCloudPersistent ? 'Persistent Global Cloud' : 'Multi-Tier Local Cache';
+          engineBadgeEl.className = s.isCloudPersistent ? 'storage-card-badge' : 'storage-card-badge badge-blue';
+        }
+        if (menuCountEl) menuCountEl.textContent = `${s.localMenuCount} menus`;
+
+        if (summaryEl) {
+          summaryEl.textContent = s.isCloudPersistent
+            ? '✓ Cloud persistence is fully enabled. Menus are synchronized and stored permanently across all regions and deployments.'
+            : 'Menus are currently stored across memory, local filesystem, and your browser vault. Connect free Vercel KV for global cloud storage:';
+        }
+
+        if (stepsEl) {
+          if (s.setupGuide) {
+            stepsEl.innerHTML = s.setupGuide.steps.map(st => `<div style="margin-bottom:0.4rem;">• ${escapeHtml(st)}</div>`).join('');
+          } else {
+            stepsEl.innerHTML = '<div style="color:var(--color-accent); font-weight:600;">✓ All systems operating smoothly with 0ms delivery cache.</div>';
+          }
+        }
+      }
+    } catch (_) {}
+
+    storageModal.showModal();
+  }
 
   // ----------------------------------------------------
   // Toast Notification System
@@ -403,6 +491,32 @@
           </div>
         </div>
 
+        <!-- Storage Toolbar & Menus Section Header -->
+        <div class="menus-section-header">
+          <div>
+            <h2 class="menus-section-title">All Stored Menus</h2>
+            <p class="menus-section-desc">Smooth delivery across all devices with instant multi-tier storage</p>
+          </div>
+          <div class="storage-quick-actions">
+            <a href="/api/menus/export/backup" class="btn btn-secondary btn-sm" id="btn-backup-menus" download title="Download full JSON backup of all menus">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Backup All
+            </a>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-restore-menus" title="Restore menus from a backup file">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Restore
+            </button>
+            <input type="file" id="restore-file-input" accept=".json" hidden>
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-storage-center" title="Menu Storage Status & Settings">
+              <span class="storage-indicator-dot"></span>
+              <span id="storage-quick-label">Storage</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Auto-Restore Banner (rendered dynamically if menus are missing but found in vault) -->
+        <div id="vault-banner-wrap"></div>
+
         <!-- Menus Grid -->
         <div id="menus-container">
           <p style="color: var(--color-text-muted);">Loading menus...</p>
@@ -411,7 +525,47 @@
     `;
 
     setupUploadZone();
+    setupStorageToolbar();
     await loadMenusList();
+    await updateStorageStatusPill();
+  }
+
+  function setupStorageToolbar() {
+    const restoreBtn = document.getElementById('btn-restore-menus');
+    const restoreInput = document.getElementById('restore-file-input');
+    const storageBtn = document.getElementById('btn-storage-center');
+
+    if (restoreBtn && restoreInput) {
+      restoreBtn.addEventListener('click', () => restoreInput.click());
+      restoreInput.addEventListener('change', async () => {
+        if (!restoreInput.files || restoreInput.files.length === 0) return;
+        const file = restoreInput.files[0];
+        try {
+          const text = await file.text();
+          const json = JSON.parse(text);
+          showToast('Importing and restoring menus...', 'info');
+          const res = await apiFetch('/api/menus/import/restore', {
+            method: 'POST',
+            body: json
+          });
+          if (res.ok) {
+            showToast(res.data.message || 'Menus successfully restored!');
+            await loadMenusList();
+            await updateStorageStatusPill();
+          } else {
+            showToast(res.message || 'Restore failed', 'error');
+          }
+        } catch (err) {
+          showToast('Invalid backup JSON file: ' + err.message, 'error');
+        } finally {
+          restoreInput.value = '';
+        }
+      });
+    }
+
+    if (storageBtn) {
+      storageBtn.addEventListener('click', openStorageModal);
+    }
   }
 
   function setupUploadZone() {
@@ -517,6 +671,43 @@
     }
 
     const menus = res.data.menus || [];
+    const bannerWrap = document.getElementById('vault-banner-wrap');
+
+    if (menus.length > 0) {
+      saveToVault(menus);
+      if (bannerWrap) bannerWrap.innerHTML = '';
+    } else {
+      const vaultMenus = getVaultMenus();
+      if (vaultMenus.length > 0 && bannerWrap) {
+        bannerWrap.innerHTML = `
+          <div class="vault-restore-card">
+            <div class="vault-restore-left">
+              <div class="vault-restore-icon">⚡</div>
+              <div class="vault-restore-text">
+                <h4>Restore Stored Menus</h4>
+                <p>Found <strong>${vaultMenus.length} menus</strong> safely preserved in your browser vault. Synchronize them back to the server in 1 click.</p>
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="vault-restore-action-btn">Restore ${vaultMenus.length} Menus Now</button>
+          </div>
+        `;
+        document.getElementById('vault-restore-action-btn')?.addEventListener('click', async () => {
+          showToast('Synchronizing vault menus to server...', 'info');
+          const syncRes = await apiFetch('/api/menus/sync/vault', {
+            method: 'POST',
+            body: { menus: vaultMenus }
+          });
+          if (syncRes.ok) {
+            showToast(syncRes.data.message || 'Menus successfully restored!');
+            await loadMenusList();
+            await updateStorageStatusPill();
+          } else {
+            showToast(syncRes.message || 'Failed to restore vault menus', 'error');
+          }
+        });
+      }
+    }
+
     if (menus.length === 0) {
       container.innerHTML = `
         <div style="text-align:center; padding: 3rem 1rem; color: var(--color-text-muted);">
@@ -1472,9 +1663,75 @@
   }
 
   // ----------------------------------------------------
-  // Global Header Actions (Brand, Password, Logout)
+  // Global Header Actions (Brand, Password, Logout, Storage)
   // ----------------------------------------------------
   brandHomeBtn.addEventListener('click', () => navigate('#dashboard'));
+
+  if (headerStorageBtn) {
+    headerStorageBtn.addEventListener('click', openStorageModal);
+  }
+
+  if (storageModalClose) {
+    storageModalClose.addEventListener('click', () => storageModal.close());
+  }
+
+  if (modalRestoreBtn) {
+    modalRestoreBtn.addEventListener('click', () => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = '.json';
+      fileInput.onchange = async () => {
+        if (!fileInput.files || fileInput.files.length === 0) return;
+        try {
+          const text = await fileInput.files[0].text();
+          const json = JSON.parse(text);
+          showToast('Importing and restoring menus...', 'info');
+          const res = await apiFetch('/api/menus/import/restore', {
+            method: 'POST',
+            body: json
+          });
+          if (res.ok) {
+            storageModal.close();
+            showToast(res.data.message || 'Menus successfully restored!');
+            if (window.location.hash === '#dashboard' || !window.location.hash) {
+              await loadMenusList();
+            }
+            await updateStorageStatusPill();
+          } else {
+            showToast(res.message || 'Failed to restore menus', 'error');
+          }
+        } catch (err) {
+          showToast('Invalid backup file: ' + err.message, 'error');
+        }
+      };
+      fileInput.click();
+    });
+  }
+
+  if (modalSyncVaultBtn) {
+    modalSyncVaultBtn.addEventListener('click', async () => {
+      const vaultMenus = getVaultMenus();
+      if (vaultMenus.length === 0) {
+        showToast('Vault is empty. Current menus are already up to date.', 'info');
+        return;
+      }
+      showToast('Synchronizing vault with server...', 'info');
+      const res = await apiFetch('/api/menus/sync/vault', {
+        method: 'POST',
+        body: { menus: vaultMenus }
+      });
+      if (res.ok) {
+        storageModal.close();
+        showToast(res.data.message || 'Synchronization complete!');
+        if (window.location.hash === '#dashboard' || !window.location.hash) {
+          await loadMenusList();
+        }
+        await updateStorageStatusPill();
+      } else {
+        showToast(res.message || 'Synchronization failed', 'error');
+      }
+    });
+  }
 
   logoutBtn.addEventListener('click', async () => {
     const res = await apiFetch('/api/auth/logout', { method: 'POST' });

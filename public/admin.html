@@ -25,6 +25,10 @@
       </div>
       <div class="admin-user-menu">
         <span class="user-email-tag" id="user-email-display"></span>
+        <button type="button" class="btn btn-secondary btn-sm storage-pill-btn" id="header-storage-btn" title="Menu Storage & Cloud Delivery Status">
+          <span class="storage-dot"></span>
+          <span id="header-storage-text">Storage</span>
+        </button>
         <button type="button" class="btn btn-secondary btn-sm" id="open-password-btn">Change password</button>
         <button type="button" class="btn btn-secondary btn-sm" id="logout-btn">Log out</button>
       </div>
@@ -69,6 +73,53 @@
           <button type="submit" class="btn btn-primary">Update password</button>
         </div>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Storage & Delivery Center Modal -->
+  <dialog id="storage-modal" class="admin-modal storage-modal">
+    <div class="admin-modal-inner" style="max-width: 580px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 0.6rem;">
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">⚡ Storage & Delivery Center</h3>
+        <button type="button" class="btn-close-modal" id="storage-modal-close" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--color-text-muted);" aria-label="Close dialog">&times;</button>
+      </div>
+      <p style="color: var(--color-text-muted); font-size: 0.88rem; margin-bottom: 1.25rem; line-height: 1.5;">
+        Multi-tier persistent storage engine ensuring high-speed, smooth delivery of all uploaded and incoming menus.
+      </p>
+
+      <div class="storage-info-grid">
+        <div class="storage-info-card">
+          <span class="storage-card-label">Active Storage Engine</span>
+          <div class="storage-card-value" id="storage-engine-name">Loading...</div>
+          <span class="storage-card-badge" id="storage-engine-badge">Checking...</span>
+        </div>
+        <div class="storage-info-card">
+          <span class="storage-card-label">Stored Menus</span>
+          <div class="storage-card-value" id="storage-menu-count">0</div>
+          <span class="storage-card-sub" style="font-size:0.75rem; color:var(--color-text-muted);">Safely Cached & Ready</span>
+        </div>
+      </div>
+
+      <div class="storage-actions-panel" style="margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.02); border: 1px solid var(--color-border);">
+        <h4 style="font-size: 0.92rem; font-weight: 600; margin-bottom: 0.75rem;">Backup & Synchronization</h4>
+        <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+          <a href="/api/menus/export/backup" class="btn btn-secondary btn-sm" id="modal-download-backup-btn" download>
+            📥 Download Backup (.json)
+          </a>
+          <button type="button" class="btn btn-secondary btn-sm" id="modal-restore-btn">
+            📤 Restore from File (.json)
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" id="modal-sync-vault-btn">
+            🔄 Synchronize Vault & Cloud
+          </button>
+        </div>
+      </div>
+
+      <div class="cloud-setup-guide" id="cloud-setup-guide-box" style="margin-top: 1rem; padding: 0.9rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.015); border: 1px solid var(--color-border);">
+        <h4 style="font-size: 0.88rem; font-weight: 600; margin-bottom: 0.4rem;">Cloud Storage Guide</h4>
+        <p id="cloud-setup-summary" style="font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 0.5rem;"></p>
+        <div id="cloud-setup-steps" class="cloud-setup-steps" style="font-size: 0.8rem; color: var(--color-text-muted); line-height: 1.5;"></div>
+      </div>
     </div>
   </dialog>
 

@@ -43,8 +43,9 @@ router.get('/:slug/:version/:file', attachUser, async (req, res) => {
     // If the file is not on this lambda's /tmp disk, check if dish has embedded thumbData
     const itemId = file.replace(/(-thumb)?\.webp$/, '');
     const dish = (menu.items || []).find(it => it.id === itemId);
-    if (dish && dish.thumbData && dish.thumbData.startsWith('data:image/webp;base64,')) {
-      const b64 = dish.thumbData.slice('data:image/webp;base64,'.length);
+    const dataUri = dish?.imageData || dish?.thumbData;
+    if (dataUri && dataUri.startsWith('data:image/webp;base64,')) {
+      const b64 = dataUri.slice('data:image/webp;base64,'.length);
       const buf = Buffer.from(b64, 'base64');
       try {
         await fs.promises.mkdir(safeDir, { recursive: true });
