@@ -596,7 +596,39 @@
 
         <!-- Menus Grid -->
         <div id="menus-container">
-          <p style="color: var(--color-text-muted);">Loading menus...</p>
+          <div class="cloud-loading-banner">
+            <div class="cloud-spinner-ring"></div>
+            <div>
+              <div class="cloud-loading-title">Loading menus from Cloud...</div>
+              <div class="cloud-loading-sub">Connecting to MongoDB Atlas & synchronizing latest menus</div>
+            </div>
+          </div>
+          <div class="skeleton-menus-grid">
+            <div class="skeleton-card">
+              <div class="skeleton-cover shimmer-effect"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-title shimmer-effect"></div>
+                <div class="skeleton-line skeleton-subtitle shimmer-effect"></div>
+                <div class="skeleton-line skeleton-meta shimmer-effect"></div>
+              </div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-cover shimmer-effect"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-title shimmer-effect"></div>
+                <div class="skeleton-line skeleton-subtitle shimmer-effect"></div>
+                <div class="skeleton-line skeleton-meta shimmer-effect"></div>
+              </div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-cover shimmer-effect"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-title shimmer-effect"></div>
+                <div class="skeleton-line skeleton-subtitle shimmer-effect"></div>
+                <div class="skeleton-line skeleton-meta shimmer-effect"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -737,9 +769,33 @@
     });
   }
 
-  async function loadMenusList() {
+  async function loadMenusList(showLoader = false) {
     const container = document.getElementById('menus-container');
     if (!container) return;
+
+    if (showLoader) {
+      container.innerHTML = `
+        <div class="cloud-loading-banner">
+          <div class="cloud-spinner-ring"></div>
+          <div>
+            <div class="cloud-loading-title">Loading menus from Cloud...</div>
+            <div class="cloud-loading-sub">Connecting to MongoDB Atlas & synchronizing latest menus</div>
+          </div>
+        </div>
+        <div class="skeleton-menus-grid">
+          ${[1, 2, 3].map(() => `
+            <div class="skeleton-card">
+              <div class="skeleton-cover shimmer-effect"></div>
+              <div class="skeleton-body">
+                <div class="skeleton-line skeleton-title shimmer-effect"></div>
+                <div class="skeleton-line skeleton-subtitle shimmer-effect"></div>
+                <div class="skeleton-line skeleton-meta shimmer-effect"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
 
     const res = await apiFetch('/api/menus');
     if (!res.ok) {
@@ -863,7 +919,19 @@
   // View: Menu Detail
   // ----------------------------------------------------
   async function renderMenuDetailView(menuId) {
-    appRoot.innerHTML = `<p style="color: var(--color-text-muted);">Loading menu details...</p>`;
+    appRoot.innerHTML = `
+      <div class="detail-cloud-loader">
+        <div class="detail-cloud-spinner-wrap">
+          <div class="detail-spinner-glow"></div>
+          <div class="detail-spinner-orbit"></div>
+          <div class="detail-spinner-icon">🍃</div>
+        </div>
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--color-text);">Loading menu from Cloud...</h3>
+          <p style="font-size: 0.85rem; color: var(--color-text-muted);">Fetching dishes, categories, and media from MongoDB Atlas</p>
+        </div>
+      </div>
+    `;
 
     const res = await apiFetch(`/api/menus/${menuId}`);
     if (!res.ok) {
