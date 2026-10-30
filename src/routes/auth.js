@@ -83,6 +83,12 @@ router.get('/me', async (req, res) => {
     return res.status(401).json({ error: 'Unauthorized', message: 'Session invalid or expired' });
   }
 
+  // Rolling session refresh: extend session on active requests
+  try {
+    const refreshedToken = await createSessionToken(user);
+    setSessionCookie(req, res, refreshedToken);
+  } catch (_) {}
+
   res.json({
     user: {
       id: user.id,

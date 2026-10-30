@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const { DATA_DIR } = require('./config');
+const { DATA_DIR, SESSION_SECRET } = require('./config');
 const cloudStorage = require('./cloud-storage');
+const mongodb = require('./mongodb');
 
 const MENUS_DIR = path.join(DATA_DIR, 'menus');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
@@ -64,14 +65,36 @@ async function initDataDir() {
   await fs.promises.mkdir(DATA_DIR, { recursive: true });
   await fs.promises.mkdir(MENUS_DIR, { recursive: true });
 
-  // 1. If Cloud KV is configured, attempt to load persistent menus from Cloud KV
-  if (cloudStorage.hasKV) {
+  // 1. Try MongoDB Atlas Cloud first
+  try {
+    const mongoMenus = await mongodb.mongoListMenus();
+    if (Array.isArray(mongoMenus) && mongoMenus.length > 0) {
+      for (const m of mongoMenus) {
+        menusCache.set(m.id, m);
+        saveMenuToDiskOnly(m).catch(() => {});
+      }
+    } else if (Array.isArray(mongoMenus) && mongoMenus.length === 0) {
+      // MongoDB connected but empty: seed initial snapshot into MongoDB
+      const seedMenus = loadSeedMenus();
+      for (const m of seedMenus) {
+        if (m && m.id) {
+          menusCache.set(m.id, m);
+          mongodb.mongoSaveMenu(m).catch(() => {});
+          saveMenuToDiskOnly(m).catch(() => {});
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[MONGO INIT WARNING]', err.message);
+  }
+
+  // 2. If Cloud KV is configured and cache still empty, attempt to load from Cloud KV
+  if (menusCache.size === 0 && cloudStorage.hasKV) {
     try {
       const kvMenus = await cloudStorage.kvListMenus();
       if (Array.isArray(kvMenus) && kvMenus.length > 0) {
         for (const m of kvMenus) {
           menusCache.set(m.id, m);
-          // Mirror to local disk cache in background
           saveMenuToDiskOnly(m).catch(() => {});
         }
       }
@@ -80,7 +103,7 @@ async function initDataDir() {
     }
   }
 
-  // 2. If memory cache still empty, load existing menus from local disk
+  // 3. If memory cache still empty, load existing menus from local disk
   if (menusCache.size === 0) {
     try {
       const entries = await fs.promises.readdir(MENUS_DIR, { withFileTypes: true });
@@ -92,6 +115,7 @@ async function initDataDir() {
           const menu = JSON.parse(raw);
           if (menu && menu.id) {
             menusCache.set(menu.id, menu);
+            mongodb.mongoSaveMenu(menu).catch(() => {});
             if (cloudStorage.hasKV) {
               cloudStorage.kvSaveMenu(menu).catch(() => {});
             }
@@ -101,13 +125,14 @@ async function initDataDir() {
     } catch (_) {}
   }
 
-  // 3. If still empty (e.g. fresh container cold start on Vercel), hydrate from bundled seed snapshot
+  // 4. If still empty (fresh container cold start), hydrate from bundled seed snapshot
   if (menusCache.size === 0) {
     const seedMenus = loadSeedMenus();
     for (const m of seedMenus) {
       if (m && m.id) {
         menusCache.set(m.id, m);
         saveMenuToDiskOnly(m).catch(() => {});
+        mongodb.mongoSaveMenu(m).catch(() => {});
         if (cloudStorage.hasKV) {
           cloudStorage.kvSaveMenu(m).catch(() => {});
         }
@@ -119,7 +144,7 @@ async function initDataDir() {
 }
 
 /**
- * Helper to write a menu to local disk without touching cloud KV
+ * Helper to write a menu to local disk without touching cloud storage
  */
 async function saveMenuToDiskOnly(menu) {
   if (!menu || !menu.id) return;
@@ -131,10 +156,25 @@ async function saveMenuToDiskOnly(menu) {
 }
 
 /**
- * Get or generate HMAC secret key
+ * Get or generate HMAC secret key (100% stable across serverless instances)
  */
 async function getSecretKey() {
+  // 1. Stable SESSION_SECRET from environment or configuration
+  if (SESSION_SECRET && SESSION_SECRET.length >= 32) {
+    return SESSION_SECRET;
+  }
+
+  // 2. Check MongoDB persistent system metadata
+  try {
+    const mongoKey = await mongodb.mongoGetSecretKey();
+    if (mongoKey && mongoKey.trim().length >= 32) {
+      return mongoKey.trim();
+    }
+  } catch (_) {}
+
   await initDataDir();
+
+  // 3. Check local file
   try {
     const key = await fs.promises.readFile(SECRET_FILE, 'utf8');
     if (key && key.trim().length >= 32) {
@@ -144,36 +184,48 @@ async function getSecretKey() {
     if (err.code !== 'ENOENT') throw err;
   }
 
+  // 4. Fallback: generate and persist key
   const newKey = crypto.randomBytes(64).toString('hex');
   await atomicWrite(SECRET_FILE, newKey);
+  mongodb.mongoSaveSecretKey(newKey).catch(() => {});
   return newKey;
 }
 
 /**
- * User storage functions (with Cloud KV synchronization)
+ * User storage functions (MongoDB -> Cloud KV -> Local Disk)
  */
 async function getUsers() {
   await initDataDir();
 
-  // Try Cloud KV first
+  // 1. Try MongoDB Atlas first
+  try {
+    const mongoUsers = await mongodb.mongoGetUsers();
+    if (Array.isArray(mongoUsers) && mongoUsers.length > 0) {
+      // Keep disk in sync
+      atomicWrite(USERS_FILE, JSON.stringify({ users: mongoUsers }, null, 2)).catch(() => {});
+      return mongoUsers;
+    }
+  } catch (_) {}
+
+  // 2. Try Cloud KV
   if (cloudStorage.hasKV) {
     try {
       const kvUsers = await cloudStorage.kvGetUsers();
       if (Array.isArray(kvUsers) && kvUsers.length > 0) {
-        // Keep disk in sync
         atomicWrite(USERS_FILE, JSON.stringify({ users: kvUsers }, null, 2)).catch(() => {});
         return kvUsers;
       }
     } catch (_) {}
   }
 
-  // Fallback to disk
+  // 3. Fallback to disk
   try {
     const raw = await fs.promises.readFile(USERS_FILE, 'utf8');
     const parsed = JSON.parse(raw);
     const users = Array.isArray(parsed.users) ? parsed.users : [];
-    if (users.length > 0 && cloudStorage.hasKV) {
-      cloudStorage.kvSaveUsers(users).catch(() => {});
+    if (users.length > 0) {
+      mongodb.mongoSaveUsers(users).catch(() => {});
+      if (cloudStorage.hasKV) cloudStorage.kvSaveUsers(users).catch(() => {});
     }
     return users;
   } catch (err) {
@@ -185,6 +237,9 @@ async function getUsers() {
 async function saveUsers(users) {
   const data = JSON.stringify({ users }, null, 2);
   await atomicWrite(USERS_FILE, data);
+
+  // Sync with MongoDB Atlas
+  mongodb.mongoSaveUsers(users).catch(() => {});
 
   // Sync with Cloud KV
   if (cloudStorage.hasKV) {
@@ -213,14 +268,22 @@ async function getUserById(id) {
 async function listMenus() {
   await initDataDir();
 
-  // If memory cache is empty, try re-syncing from Cloud KV or disk
+  // If memory cache is empty, try re-syncing from MongoDB, Cloud KV, or disk
   if (menusCache.size === 0) {
-    if (cloudStorage.hasKV) {
+    try {
+      const mongoMenus = await mongodb.mongoListMenus();
+      if (Array.isArray(mongoMenus) && mongoMenus.length > 0) {
+        for (const m of mongoMenus) menusCache.set(m.id, m);
+      }
+    } catch (_) {}
+
+    if (menusCache.size === 0 && cloudStorage.hasKV) {
       const kvMenus = await cloudStorage.kvListMenus();
       if (Array.isArray(kvMenus) && kvMenus.length > 0) {
         for (const m of kvMenus) menusCache.set(m.id, m);
       }
     }
+
     if (menusCache.size === 0) {
       const seedMenus = loadSeedMenus();
       for (const m of seedMenus) menusCache.set(m.id, m);
@@ -240,6 +303,16 @@ async function getMenuById(id) {
     return menusCache.get(id);
   }
 
+  // Try MongoDB
+  try {
+    const mongoMenu = await mongodb.mongoGetMenuById(id);
+    if (mongoMenu) {
+      menusCache.set(mongoMenu.id, mongoMenu);
+      return mongoMenu;
+    }
+  } catch (_) {}
+
+  // Try Cloud KV
   if (cloudStorage.hasKV) {
     const m = await cloudStorage.kvGetMenu(id);
     if (m) {
@@ -248,6 +321,7 @@ async function getMenuById(id) {
     }
   }
 
+  // Try Local Disk
   const safeId = path.basename(id);
   const menuPath = path.join(MENUS_DIR, safeId, 'menu.json');
   try {
@@ -278,7 +352,12 @@ async function saveMenu(menu) {
   // 2. Save to local disk atomically
   await saveMenuToDiskOnly(menu);
 
-  // 3. Save to Cloud KV (Upstash / Vercel KV) if available
+  // 3. Save to MongoDB Atlas
+  mongodb.mongoSaveMenu(menu).catch(err => {
+    console.warn('[MONGO SAVE MENU WARNING]', err.message);
+  });
+
+  // 4. Save to Cloud KV (Upstash / Vercel KV) if available
   if (cloudStorage.hasKV) {
     try {
       await cloudStorage.kvSaveMenu(menu);
@@ -302,7 +381,12 @@ async function deleteMenu(id) {
     await fs.promises.rm(menuDir, { recursive: true, force: true });
   } catch (_) {}
 
-  // 3. Remove from Cloud KV
+  // 3. Remove from MongoDB Atlas
+  mongodb.mongoDeleteMenu(id).catch(err => {
+    console.warn('[MONGO DELETE MENU WARNING]', err.message);
+  });
+
+  // 4. Remove from Cloud KV
   if (cloudStorage.hasKV) {
     try {
       await cloudStorage.kvDeleteMenu(id);
@@ -310,6 +394,46 @@ async function deleteMenu(id) {
   }
 
   return true;
+}
+
+/**
+ * Composite Storage Status including MongoDB Atlas & Cloud KV
+ */
+async function getStorageStatus() {
+  const kvStatus = cloudStorage.getStorageStatus(menusCache.size);
+  const mongoStatus = await mongodb.getMongoStatus();
+
+  let provider = kvStatus.provider;
+  let displayName = kvStatus.displayName;
+  let isCloudPersistent = kvStatus.isCloudPersistent;
+
+  if (mongoStatus.isConnected) {
+    provider = 'mongodb-atlas';
+    displayName = 'MongoDB Atlas Cloud (ReplicaSet)';
+    isCloudPersistent = true;
+  } else if (mongoStatus.isConfigured && mongoStatus.needsUsername) {
+    displayName = 'MongoDB Atlas (Awaiting Username)';
+  }
+
+  return {
+    provider,
+    displayName,
+    isCloudPersistent,
+    localMenuCount: menusCache.size,
+    mongo: mongoStatus,
+    kv: {
+      hasKV: kvStatus.hasKV,
+      hasGitHub: kvStatus.hasGitHub
+    },
+    setupGuide: !isCloudPersistent ? {
+      title: 'MongoDB Atlas & Cloud Storage Connection',
+      steps: [
+        mongoStatus.needsUsername
+          ? `MongoDB Atlas cluster is configured! Please provide your MongoDB Atlas Database Username to complete connection.`
+          : `Connect MongoDB Atlas using MONGODB_URI in your environment or Admin Storage Center.`
+      ]
+    } : null
+  };
 }
 
 module.exports = {
@@ -326,5 +450,5 @@ module.exports = {
   getMenuBySlug,
   saveMenu,
   deleteMenu,
-  getStorageStatus: () => cloudStorage.getStorageStatus(menusCache.size)
+  getStorageStatus
 };

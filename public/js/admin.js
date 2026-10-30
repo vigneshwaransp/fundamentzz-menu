@@ -105,8 +105,85 @@
             stepsEl.innerHTML = '<div style="color:var(--color-accent); font-weight:600;">✓ All systems operating smoothly with 0ms delivery cache.</div>';
           }
         }
+
+        // MongoDB UI Status & Binding
+        const mongoStatusPill = document.getElementById('mongo-status-pill');
+        const mongoUserInput = document.getElementById('mongo-username-input');
+        if (s.mongo) {
+          if (mongoUserInput && s.mongo.username) {
+            mongoUserInput.value = s.mongo.username;
+          }
+          if (mongoStatusPill) {
+            if (s.mongo.isConnected) {
+              mongoStatusPill.textContent = '🟢 Connected';
+              mongoStatusPill.className = 'storage-card-badge';
+              mongoStatusPill.style.background = '';
+              mongoStatusPill.style.color = '';
+            } else if (s.mongo.needsUsername) {
+              mongoStatusPill.textContent = '🟡 Enter DB User';
+              mongoStatusPill.className = 'storage-card-badge badge-blue';
+              mongoStatusPill.style.background = '';
+              mongoStatusPill.style.color = '';
+            } else {
+              mongoStatusPill.textContent = '🔴 Disconnected';
+              mongoStatusPill.className = 'storage-card-badge';
+              mongoStatusPill.style.background = 'rgba(239, 68, 68, 0.15)';
+              mongoStatusPill.style.color = '#dc2626';
+            }
+          }
+        }
       }
     } catch (_) {}
+
+    // Setup MongoDB config form submit handler
+    const mongoForm = document.getElementById('mongo-config-form');
+    if (mongoForm && !mongoForm.dataset.bound) {
+      mongoForm.dataset.bound = 'true';
+      mongoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const usernameInput = document.getElementById('mongo-username-input');
+        const feedback = document.getElementById('mongo-feedback');
+        const saveBtn = document.getElementById('mongo-save-btn');
+        const username = usernameInput ? usernameInput.value.trim() : '';
+
+        if (!username) {
+          showToast('Please enter your MongoDB database username', 'error');
+          return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Connecting...';
+        if (feedback) {
+          feedback.style.display = 'block';
+          feedback.style.color = 'var(--color-text-muted)';
+          feedback.textContent = 'Testing connection to Atlas cluster...';
+        }
+
+        const res = await apiFetch('/api/menus/storage/mongodb-config', {
+          method: 'POST',
+          body: { username }
+        });
+
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Connect Atlas';
+
+        if (res.ok && res.data.ok) {
+          if (feedback) {
+            feedback.style.color = 'var(--color-accent)';
+            feedback.textContent = '✓ Successfully connected to MongoDB Atlas! Menus & sessions are now persistent.';
+          }
+          showToast('MongoDB Atlas connected successfully!');
+          await updateStorageStatusPill();
+          await loadMenusList();
+        } else {
+          if (feedback) {
+            feedback.style.color = 'var(--color-destructive)';
+            feedback.textContent = '✕ Connection failed: ' + (res.data?.message || res.message || 'Check username & Atlas access');
+          }
+          showToast(res.data?.message || 'MongoDB connection failed', 'error');
+        }
+      });
+    }
 
     storageModal.showModal();
   }

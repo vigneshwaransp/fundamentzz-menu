@@ -139,10 +139,55 @@ router.get('/', async (req, res) => {
  */
 router.get('/storage/status', async (req, res) => {
   try {
-    const status = db.getStorageStatus();
+    const status = await db.getStorageStatus();
     res.json({ ok: true, status });
   } catch (err) {
     res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/storage/mongodb-config - Save MongoDB username or custom URI
+ */
+router.post('/storage/mongodb-config', requirePerm('menus:write'), async (req, res) => {
+  try {
+    const { username, uri } = req.body || {};
+    const mongodb = require('../mongodb');
+    const configToSave = {};
+    if (username !== undefined) configToSave.username = String(username).trim();
+    if (uri !== undefined) configToSave.uri = String(uri).trim();
+
+    mongodb.saveMongoConfig(configToSave);
+
+    // Test connection with updated config
+    const testResult = await mongodb.testMongoConnection(configToSave.uri, configToSave.username);
+    if (testResult.ok) {
+      await db.initDataDir();
+    }
+
+    const updatedStatus = await db.getStorageStatus();
+    res.json({
+      ok: testResult.ok,
+      message: testResult.ok ? 'MongoDB Atlas connected successfully!' : testResult.error,
+      testResult,
+      status: updatedStatus
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Server Error', message: err.message });
+  }
+});
+
+/**
+ * POST /api/menus/storage/mongodb-test - Test MongoDB connection parameters
+ */
+router.post('/storage/mongodb-test', requirePerm('menus:write'), async (req, res) => {
+  try {
+    const { username, uri } = req.body || {};
+    const mongodb = require('../mongodb');
+    const result = await mongodb.testMongoConnection(uri, username);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 

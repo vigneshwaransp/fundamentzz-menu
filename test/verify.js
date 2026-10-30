@@ -744,6 +744,27 @@ async function runTests() {
     assert(vaultSyncRes.status === 200, 'POST /api/menus/sync/vault returns 200 OK');
     assert(vaultSyncRes.json?.ok === true, 'Vault sync response ok');
 
+    // Test MongoDB test endpoint
+    const mongoTestRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/api/menus/storage/mongodb-test',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': validSessionCookie,
+        'X-Requested-With': 'dm'
+      }
+    }, JSON.stringify({ username: 'test_candidate_user' }));
+    assert(mongoTestRes.status === 200, 'POST /api/menus/storage/mongodb-test returns 200 OK');
+    assert(mongoTestRes.json?.ok === false, 'Invalid credentials return ok: false with error details');
+
+    // Test Session Secret stability
+    const secretKey1 = await db.getSecretKey();
+    const secretKey2 = await db.getSecretKey();
+    assert(secretKey1 === secretKey2, 'Session secret key is deterministic and stable');
+    assert(secretKey1.length >= 32, 'Session secret key has sufficient length');
+
     // Clean up restored menu
     await request({
       hostname: '127.0.0.1',

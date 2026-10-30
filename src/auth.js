@@ -25,7 +25,7 @@ async function seedOwnerIfNeeded() {
 
     const passwordHash = await bcrypt.hash(plainPassword, 10);
     const ownerUser = {
-      id: `usr_${crypto.randomBytes(8).toString('hex')}`,
+      id: 'usr_owner_fundamentzz',
       email: OWNER_EMAIL,
       passwordHash,
       role: 'owner',
@@ -44,11 +44,15 @@ async function seedOwnerIfNeeded() {
   // Ensure owner account matches configured OWNER_EMAIL and OWNER_PASSWORD
   const owner = users.find(u => u.role === 'owner') || users[0];
   if (owner && OWNER_PASSWORD) {
-    const isMatch = await bcrypt.compare(OWNER_PASSWORD, owner.passwordHash);
-    if (!isMatch || owner.email.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
+    const isEmailMatch = owner.email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    const isPassMatch = await bcrypt.compare(OWNER_PASSWORD, owner.passwordHash);
+
+    if (!isEmailMatch || !isPassMatch) {
       owner.email = OWNER_EMAIL;
-      owner.passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
-      owner.passwordVersion = (owner.passwordVersion || 1) + 1;
+      if (!isPassMatch) {
+        owner.passwordHash = await bcrypt.hash(OWNER_PASSWORD, 10);
+        owner.passwordVersion = (owner.passwordVersion || 1) + 1;
+      }
       owner.updatedAt = new Date().toISOString();
       await db.saveUsers(users);
       console.log(`[SEED] Synchronized owner account to ${OWNER_EMAIL}`);
@@ -100,7 +104,13 @@ async function verifySessionToken(token) {
       return null;
     }
 
-    const user = await db.getUserById(payload.uid);
+    let user = await db.getUserById(payload.uid);
+    // If not found by uid (e.g. legacy random uid from older container), fallback to owner account
+    if (!user && payload.role === 'owner') {
+      const users = await db.getUsers();
+      user = users.find(u => u.role === 'owner') || null;
+    }
+
     if (!user) return null;
 
     // Check if password version matches (changing password increments version, invalidating old sessions)
