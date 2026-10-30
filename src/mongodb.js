@@ -65,17 +65,23 @@ function getResolvedMongoUri() {
   let baseUri = saved.uri || MONGODB_URI || '';
   const user = saved.username || MONGODB_USER || process.env.DB_USERNAME || '';
 
-  if (baseUri.includes('<db_username>')) {
-    if (user && user.trim()) {
-      baseUri = baseUri.replace('<db_username>', encodeURIComponent(user.trim()));
+  // Handle literal angle brackets or placeholder if the user pasted <username>
+  if (baseUri.includes('<') && baseUri.includes('>')) {
+    if (baseUri.includes('<db_username>') || baseUri.includes('<username>')) {
+      if (user && user.trim()) {
+        baseUri = baseUri.replace(/<db_username>|<username>/g, encodeURIComponent(user.trim()));
+      } else {
+        return { uri: baseUri, needsUsername: true, username: '' };
+      }
     } else {
-      return { uri: baseUri, needsUsername: true, username: '' };
+      // User entered e.g. <vigneshwaranspcs24_db_user>
+      baseUri = baseUri.replace(/<([^>]+)>/g, '$1');
     }
   }
 
   // Ensure database name is set in URI path if missing
-  if (baseUri && !baseUri.includes('/?') && !baseUri.match(/\.net(:\d+)?\/[a-zA-Z0-9_]+/)) {
-    baseUri = baseUri.replace('/?', `/${MONGODB_DB_NAME}?`);
+  if (baseUri && !baseUri.includes(`/${MONGODB_DB_NAME}`) && baseUri.includes('.net/')) {
+    baseUri = baseUri.replace('.net/', `.net/${MONGODB_DB_NAME}`);
   }
 
   return { uri: baseUri, needsUsername: false, username: user };
@@ -166,12 +172,14 @@ async function isMongoConnected() {
  */
 async function testMongoConnection(testUri, testUsername) {
   let uri = testUri || MONGODB_URI || '';
-  if (uri.includes('<db_username>')) {
-    if (testUsername && testUsername.trim()) {
-      uri = uri.replace('<db_username>', encodeURIComponent(testUsername.trim()));
+  if (testUsername && testUsername.trim()) {
+    if (uri.includes('<db_username>') || uri.includes('<username>')) {
+      uri = uri.replace(/<db_username>|<username>/g, encodeURIComponent(testUsername.trim()));
     } else {
-      return { ok: false, error: 'Database username is required.' };
+      uri = uri.replace(/:\/\/([^:]+):/, `://${encodeURIComponent(testUsername.trim())}:`);
     }
+  } else if (uri.includes('<db_username>') || uri.includes('<username>')) {
+    return { ok: false, error: 'Database username is required.' };
   }
 
   const client = new MongoClient(uri, {
@@ -208,6 +216,9 @@ async function getMongoStatus() {
   // Obfuscate password in URI for UI display
   const maskedUri = uri ? uri.replace(/:([^@]+)@/, ':••••••••@') : '';
 
+  const hostMatch = uri.match(/@([^/?]+)/);
+  const clusterHost = hostMatch ? hostMatch[1] : 'cluster0.3sigkya.mongodb.net';
+
   return {
     isConfigured: Boolean(uri),
     isConnected: connected,
@@ -216,7 +227,7 @@ async function getMongoStatus() {
     maskedUri,
     databaseName: MONGODB_DB_NAME,
     lastError: lastConnectionError,
-    clusterHost: 'ac-blagpff-shard-00-00.3sigkya.mongodb.net'
+    clusterHost
   };
 }
 
