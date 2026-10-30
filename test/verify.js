@@ -258,6 +258,27 @@ async function runTests() {
     assert(publicRes.body.includes('og:image'), 'Public HTML contains Open Graph og:image tag');
     assert(publicRes.body.includes('Sold out · தீர்ந்தது'), 'Public HTML contains "Sold out · தீர்ந்தது" state');
     assert(publicRes.body.includes('hero-plate'), 'Public HTML contains hero plates with staggered animation');
+    assert(publicRes.body.includes('href="/favicon.svg"'), 'Public HTML contains vector favicon link');
+
+    // Vector Favicon & Asset delivery
+    const faviconSvgRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/favicon.svg',
+      method: 'GET'
+    });
+    assert(faviconSvgRes.status === 200, 'GET /favicon.svg returns 200 OK');
+    assert(faviconSvgRes.headers['content-type']?.includes('image/svg+xml'), 'Favicon SVG served with image/svg+xml');
+    assert(faviconSvgRes.body.includes('<svg'), 'Favicon SVG body contains valid svg markup');
+
+    const faviconIcoRes = await request({
+      hostname: '127.0.0.1',
+      port,
+      path: '/favicon.ico',
+      method: 'GET'
+    });
+    assert(faviconIcoRes.status === 200, 'GET /favicon.ico returns 200 OK');
+    assert(faviconIcoRes.headers['content-type']?.includes('image/x-icon'), 'Favicon ICO served with image/x-icon');
 
     // 12. Media image serving
     const mediaRes = await request({

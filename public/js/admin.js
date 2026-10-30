@@ -7,6 +7,32 @@
   let activeMenu = null;
   let isNavigating = false;
 
+  const BRAND_EMBLEM_SVG = `<svg class="brand-emblem-svg" viewBox="0 0 64 64" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bl-main-js" x1="20%" y1="10%" x2="80%" y2="90%">
+        <stop offset="0%" stop-color="#34d399"/>
+        <stop offset="35%" stop-color="#10b981"/>
+        <stop offset="100%" stop-color="#047857"/>
+      </linearGradient>
+      <linearGradient id="bl-sec-js" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#6ee7b7"/>
+        <stop offset="60%" stop-color="#059669"/>
+        <stop offset="100%" stop-color="#064e3b"/>
+      </linearGradient>
+      <linearGradient id="bl-gold-js" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#fde68a"/>
+        <stop offset="40%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#d97706"/>
+      </linearGradient>
+    </defs>
+    <path d="M14 48C22 51.5 42 51.5 50 48" stroke="url(#bl-gold-js)" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="32" cy="49.8" r="2" fill="url(#bl-gold-js)"/>
+    <path d="M31 38C21 37 16 30 17 21C18 16 23 13 27 13C26 19 28 25 31 29C32 31 32 37 31 38Z" fill="url(#bl-sec-js)" opacity="0.92"/>
+    <path d="M33 11C44 14 49 25 46 36C44 42 38 46 31 45C34 41 36 34 35 26C34 18 31 14 33 11Z" fill="url(#bl-main-js)"/>
+    <path d="M24 43C28 38 31 31 32 18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-opacity="0.9"/>
+    <path d="M45 11L46.3 14.8L50 16.2L46.3 17.6L45 21.4L43.7 17.6L40 16.2L43.7 14.8Z" fill="url(#bl-gold-js)"/>
+  </svg>`;
+
   // DOM Elements
   const appRoot = document.getElementById('app-root');
   const adminHeader = document.getElementById('admin-header');
@@ -484,7 +510,9 @@
       <div class="login-view-wrap">
         <div class="login-card glass-panel">
           <div class="login-header">
-            <div class="login-brand-badge" aria-hidden="true">🍃</div>
+            <div class="login-brand-badge" aria-hidden="true" style="padding: 11px;">
+              ${BRAND_EMBLEM_SVG}
+            </div>
             <h1 class="login-title">Digital Menu</h1>
             <p class="login-subtitle">Restaurant Owner Sign In</p>
           </div>
@@ -859,7 +887,9 @@
               ${m.coverImage ? `
                 <img src="${escapeHtml(m.coverImage)}" alt="${escapeHtml(m.name)}" loading="lazy">
               ` : `
-                <div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:2rem; color:var(--color-accent);" aria-hidden="true">🍃</div>
+                <div style="display:flex; align-items:center; justify-content:center; height:100%; padding:1.25rem; color:var(--color-accent);" aria-hidden="true">
+                  <div style="width:48px; height:48px;">${BRAND_EMBLEM_SVG}</div>
+                </div>
               `}
               <div class="menu-card-status-pill ${m.published ? 'status-live' : 'status-hidden'}">
                 <span style="width:6px; height:6px; border-radius:50%; background-color:${m.published ? 'var(--color-accent)' : '#888'};"></span>
@@ -924,7 +954,9 @@
         <div class="detail-cloud-spinner-wrap">
           <div class="detail-spinner-glow"></div>
           <div class="detail-spinner-orbit"></div>
-          <div class="detail-spinner-icon">🍃</div>
+          <div class="detail-spinner-icon" style="padding: 7px;">
+            ${BRAND_EMBLEM_SVG}
+          </div>
         </div>
         <div>
           <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--color-text);">Loading menu from Cloud...</h3>

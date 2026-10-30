@@ -137,10 +137,17 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Favicon route
-app.get('/favicon.ico', (req, res) => {
-  res.setHeader('Content-Type', 'image/svg+xml');
-  res.send('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🍃</text></svg>');
+// Favicon routes (modern vector SVG & multi-resolution binary ICO)
+app.get(['/favicon.ico', '/favicon.svg'], (req, res) => {
+  const isSvg = req.path.endsWith('.svg');
+  if (isSvg) {
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    return res.sendFile(path.join(__dirname, 'public', 'favicon.svg'));
+  }
+  res.setHeader('Content-Type', 'image/x-icon');
+  res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+  return res.sendFile(path.join(__dirname, 'public', 'favicon.ico'));
 });
 
 // Trust proxy for secure cookie detection behind reverse proxies (Render, Nginx, etc.)

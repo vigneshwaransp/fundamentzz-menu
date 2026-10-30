@@ -7,6 +7,7 @@
     "start": "node server.js",
     "test": "node test/verify.js",
     "test:browser": "node test/playwright-test.js",
+    "build:favicons": "node scripts/build-favicons.js",
     "setup:fonts": "node scripts/setup-fonts.js",
     "sample:data": "node scripts/generate-sample-data.js"
   },

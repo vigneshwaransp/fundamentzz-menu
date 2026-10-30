@@ -5,6 +5,12 @@ function renderNotFoundHtml(message = 'Menu not found or currently unavailable.'
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Menu Not Found · Digital Menu</title>
+  
+  <!-- Modern Vector Favicon & Touch Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
   <link rel="stylesheet" href="/fonts/fonts.css">
   <link rel="stylesheet" href="/css/base.css">
   <style>
@@ -55,7 +61,33 @@ function renderNotFoundHtml(message = 'Menu not found or currently unavailable.'
 </head>
 <body class="not-found-body">
   <div class="not-found-card">
-    <div class="not-found-icon">🍃</div>
+    <div class="not-found-icon">
+      <svg width="68" height="68" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="nf-main" x1="20%" y1="10%" x2="80%" y2="90%">
+            <stop offset="0%" stop-color="#34d399"/>
+            <stop offset="35%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#047857"/>
+          </linearGradient>
+          <linearGradient id="nf-sec" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#6ee7b7"/>
+            <stop offset="60%" stop-color="#059669"/>
+            <stop offset="100%" stop-color="#064e3b"/>
+          </linearGradient>
+          <linearGradient id="nf-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fde68a"/>
+            <stop offset="40%" stop-color="#f59e0b"/>
+            <stop offset="100%" stop-color="#d97706"/>
+          </linearGradient>
+        </defs>
+        <path d="M14 48C22 51.5 42 51.5 50 48" stroke="url(#nf-gold)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="32" cy="49.8" r="2" fill="url(#nf-gold)"/>
+        <path d="M31 38C21 37 16 30 17 21C18 16 23 13 27 13C26 19 28 25 31 29C32 31 32 37 31 38Z" fill="url(#nf-sec)" opacity="0.92"/>
+        <path d="M33 11C44 14 49 25 46 36C44 42 38 46 31 45C34 41 36 34 35 26C34 18 31 14 33 11Z" fill="url(#nf-main)"/>
+        <path d="M24 43C28 38 31 31 32 18" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-opacity="0.9"/>
+        <path d="M45 11L46.3 14.8L50 16.2L46.3 17.6L45 21.4L43.7 17.6L40 16.2L43.7 14.8Z" fill="url(#nf-gold)"/>
+      </svg>
+    </div>
     <h1 class="not-found-title">Menu not found</h1>
     <p class="not-found-sub">மெனு கிடைக்கவில்லை</p>
     <p class="not-found-desc">${message}</p>

@@ -239,6 +239,11 @@ function renderPublicMenuHtml(menu, isPreview = false) {
   <meta name="twitter:image" content="${escapeHtml(ogImage)}">
   <meta name="description" content="${escapeHtml(ogDescription)}">
 
+  <!-- Modern Vector Favicon & Touch Icons -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
   <!-- Google Fonts Preconnect & Stylesheet -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
